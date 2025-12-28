@@ -284,13 +284,13 @@
             case 'selector':
                 let html = '';
                 for (let g = 1; g <= numGearModes; g++) {
-                    const sel = tool.params[`mode${g}`] || 'Free';
+                    const sel = tool.params[`mode${g}`] || 'Locked';
                     html += `
                         <div class="param-row">
                             <label>Mode ${g}:</label>
                             <select class="param-input" data-param="mode${g}">
                                 <option value="A" ${sel === 'A' ? 'selected' : ''}>A</option>
-                                <option value="Free" ${sel === 'Free' ? 'selected' : ''}>Free</option>
+                                <option value="Locked" ${sel === 'Locked' ? 'selected' : ''}>Locked</option>
                                 <option value="B" ${sel === 'B' ? 'selected' : ''}>B</option>
                             </select>
                         </div>
@@ -476,7 +476,7 @@
             if (tool.type === 'selector') {
                 for (let g = 1; g <= numGearModes; g++) {
                     if (!tool.params[`mode${g}`]) {
-                        tool.params[`mode${g}`] = 'Free';
+                        tool.params[`mode${g}`] = 'Locked';
                     }
                 }
             }
@@ -503,7 +503,7 @@
                 tool.connections.push(new Connection('A', tool));
                 tool.connections.push(new Connection('B', tool));
                 for (let g = 1; g <= numGearModes; g++) {
-                    tool.params[`mode${g}`] = 'Free';
+                    tool.params[`mode${g}`] = 'Locked';
                 }
                 break;
             case 'differential':
@@ -624,6 +624,7 @@
                     flagged: result.flagged || false
                 };
 
+                // Handle single output
                 if (result.output && !result.error) {
                     const { axleId, speed, torque } = result.output;
                     const existing = axleValues.get(axleId);
@@ -637,6 +638,22 @@
                     } else if (!existing) {
                         axleValues.set(axleId, { speed, torque, outputBy: tool.id });
                         changed = true;
+                    }
+                }
+
+                // Handle multiple outputs (for Locked mode)
+                if (result.outputs && !result.error) {
+                    for (const output of result.outputs) {
+                        const { axleId, speed, torque } = output;
+                        const existing = axleValues.get(axleId);
+
+                        if (existing && existing.outputBy !== tool.id) {
+                            // Skip this output if another tool already controls it
+                            continue;
+                        } else if (!existing) {
+                            axleValues.set(axleId, { speed, torque, outputBy: tool.id });
+                            changed = true;
+                        }
                     }
                 }
             }
@@ -730,13 +747,33 @@
         if (!connCenter || !connA || !connB) return { flagged: true };
 
         // Get selection for this gear mode (Mode 1, Mode 2, etc.)
-        const selection = tool.params[`mode${gearModeNum}`] || 'Free';
+        const selection = tool.params[`mode${gearModeNum}`] || 'Locked';
 
-        if (selection === 'Free') {
-            return { flagged: true };  // Nothing connected
+        if (selection === 'Locked') {
+            // Locked mode: any connection without existing output gets speed=0
+            const outputs = [];
+            
+            for (const conn of [connCenter, connA, connB]) {
+                if (conn.axleId === null) continue;
+                
+                const hasExistingOutput = axleValues.has(conn.axleId) && axleValues.get(conn.axleId).outputBy !== tool.id;
+                if (!hasExistingOutput) {
+                    outputs.push({
+                        axleId: conn.axleId,
+                        speed: 0,
+                        torque: 0
+                    });
+                }
+            }
+            
+            // Return all outputs (or flagged if none)
+            if (outputs.length > 0) {
+                return { outputs: outputs };
+            }
+            return { flagged: true };
         }
 
-        // Determine which connection is active
+        // For 'A' or 'B' selection: connect center axle to selected axle
         const activeConn = selection === 'A' ? connA : connB;
 
         // Check if axles have inputs from OTHER tools (not this selector)
@@ -748,7 +785,7 @@
         }
 
         if (!hasCenterInput && !hasActiveInput) {
-            return { flagged: true };
+            return { flagged: true };  // No input (not an error, just no-op)
         }
 
         // Determine input and output (pass through unchanged)

@@ -62,11 +62,11 @@ I want to make a web page application suitable to be published with GitHub Pages
         - output axle torque = input axle torque * (output gear teeth / input gear teeth)
     - "Selector": represents a rotary catch selector.
       - Connections: 3 connections: one for the "center axle", and two for A and B axles.
-      - Parameters: the user must select, for each gear mode, from 3 options: "A", "free", "B".
+      - Parameters: the user must select, for each gear mode, from 3 options: "A", "Locked", "B".
         - When the user selects "A", the center axle is connected to axle A - if A is an axle that has some tool outputting to it for that specific gear mode, then A is an input and the center axle becomes an output of this tool. If the center axle is an axle that already has some tool outputting to it for the same gear mode, then A becomes an output of this tool. In both cases, B is ignored. If both the center axle and A already have some tool outputting to it for the same gear mode, this must be flagged as an error. If neither has some tool outputting to it, this must be flagged but it's not considered an error (just becomes a no-op for that gear mode).
         - The behavior is similar when the user selects "B", but for axle B.
         - Speed and torque are transmitted unchanged from input to output.
-        - When the user selects "free", nothing is connected, and no speed/torque is transmitted from/to any axle.
+        - When the user selects "Locked", any connection that does not have anything else outputting to the same axle is set as an output of this and speed is set to 0. Connections that have some other tool outputting to it are ignored.
     - "Differential": represents a differential gear mechanism.
       - Connections: 3 connections: one for the "body" axle, and two for A and B connections.
       - Parameters: none.
