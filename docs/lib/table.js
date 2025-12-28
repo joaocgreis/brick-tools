@@ -259,7 +259,7 @@ class DataTable {
 
                 const minInput = document.createElement('input');
                 minInput.type = 'number';
-                minInput.className = 'filter-input';
+                minInput.className = 'filter-input filter-input-min';
                 minInput.placeholder = 'Min';
                 minInput.value = this.filterValues[col.key].min;
                 minInput.addEventListener('input', (e) => {
@@ -270,7 +270,7 @@ class DataTable {
 
                 const maxInput = document.createElement('input');
                 maxInput.type = 'number';
-                maxInput.className = 'filter-input';
+                maxInput.className = 'filter-input filter-input-max';
                 maxInput.placeholder = 'Max';
                 maxInput.value = this.filterValues[col.key].max;
                 maxInput.addEventListener('input', (e) => {

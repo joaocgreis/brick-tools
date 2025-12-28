@@ -95,8 +95,6 @@ header .description {
 .content {
   flex: 1;
   padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
 }
 
@@ -116,12 +114,14 @@ header .description {
 .data-table-wrapper {
   overflow-x: auto;
   margin-top: 1rem;
+  width: 100%;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.95rem;
+  table-layout: auto;
 }
 
 .data-table th,
@@ -140,6 +140,8 @@ header .description {
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
+  padding: 1rem 0.75rem;
+  min-height: 40px;
 }
 
 .data-table thead th:hover {
@@ -183,16 +185,18 @@ header .description {
 /* === Filter Inputs in Table Headers === */
 .filter-row th {
   background-color: #334155;
-  padding: 0.5rem;
+  padding: 0.75rem 0.5rem;
+  vertical-align: top;
 }
 
 .filter-input {
   width: 100%;
-  padding: 0.4rem 0.6rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   background-color: var(--surface-color);
+  box-sizing: border-box;
 }
 
 .filter-input:focus {
@@ -203,11 +207,14 @@ header .description {
 
 .filter-range {
   display: flex;
-  gap: 0.25rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: max(120px, 8vw);
 }
 
 .filter-range .filter-input {
-  width: 50%;
+  width: 100%;
+  min-height: 36px;
 }
 
 /* === Preset Dropdown === */
@@ -475,6 +482,20 @@ footer p {
   .data-table td {
     padding: 0.5rem 0.75rem;
     font-size: 0.85rem;
+  }
+
+  .filter-row th {
+    padding: 0.5rem 0.3rem;
+  }
+
+  .filter-input {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .filter-range {
+    gap: 0.3rem;
+    min-width: 100px;
   }
 
   .controls-section {
