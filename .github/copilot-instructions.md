@@ -75,7 +75,13 @@ table.render();
 ### Complex State with Classes (Gearbox module)
 - `class Axle`, `class Connection`, `class Tool` - objects stored in module-scoped arrays
 - Tool types: `'source'`, `'coupling'`, `'selector'`, `'differential'` (immutable after creation)
-- Tool status tracked per-gear: `tool.status[gearNum] = { error?: string, flagged?: bool }`
+- **IMPORTANT TERMINOLOGY**:
+  - "gear mode" = overall gearbox operating mode (Mode 1, Mode 2, etc.) - stored as `tool.status[modeNum]`
+  - "gear piece" = individual circular component with teeth (Gear A, Gear B on couplings)
+  - Never use just "gear" alone - always clarify which meaning
+- Selector params use `mode${g}` keys (e.g., `tool.params.mode1 = 'A'|'Free'|'B'`)
+- Tool status tracked per mode: `tool.status[modeNum] = { error?: string, flagged?: bool }`
+- Error "Conflicting outputs" used when multiple tools output to same axle in a mode
 - **Propagation algorithm** (compute function): 
   1. Initialize axle values from source (speed=1, torque=1)
   2. Loop tools, evaluate each, update axle values
@@ -142,7 +148,7 @@ table.render();
 1. **Module state not resetting**: Call `resetData()` in `init()` (Gearbox does this, Liftarms recalculates on button click)
 2. **Floating-point comparison**: Always use tolerance `< 0.001` for filter logic, never `===`
 3. **DataTable presets not filtering**: Presets apply via dropdown; manually call `table.applyFilters()` if setting filters from code
-4. **Tool status not updating**: Status is computed in `compute()` and stored in `tool.status[gearNum]`; call `updateDiagram()` after to re-render
+4. **Tool status not updating**: Status is computed in `compute()` and stored in `tool.status[modeNum]`; call `updateDiagram()` after to re-render
 5. **Event listeners firing multiple times**: Clear container with `innerHTML = ''` before re-rendering, or use `.removeEventListener()` for re-use
 
 ## File Size & Performance

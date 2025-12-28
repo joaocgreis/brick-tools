@@ -2,7 +2,12 @@
  * Gearbox Module - Gearbox Calculator
  * Calculates gear ratios and configurations for Technic Brick gearboxes.
  * Allows users to design gearboxes by adding tools (Coupling, Selector, Differential)
- * and connecting them. Calculates speed and torque for each axle across multiple gears.
+ * and connecting them. Calculates speed and torque for each axle across multiple gear modes.
+ * 
+ * TERMINOLOGY:
+ * - "gear mode" = overall gearbox operating mode (Mode 1, Mode 2, etc.) - DO NOT just call it "gear"
+ * - "gear piece" = individual circular component with teeth (Gear A, Gear B on couplings)
+ * - "mode" params in selectors (mode1, mode2, etc.) = which connection is active for that gear mode
  */
 (function() {
     'use strict';
@@ -39,13 +44,13 @@
             this.id = id;
             this.connections = [];  // array of Connection
             this.params = {};       // tool-specific parameters
-            this.status = {};       // per-gear status: { gearNum: { error: string, flagged: bool } }
+            this.status = {};       // per-gear-mode status: { gearModeNum: { error: string, flagged: bool } }
         }
     }
 
     // ==================== Module State ====================
 
-    let numGears = 3;
+    let numGearModes = 3;
     let tools = [];
     let axles = [];
     let nextToolId = 1;
@@ -79,7 +84,7 @@
     }
 
     function resetData() {
-        numGears = 3;
+        numGearModes = 3;
         tools = [];
         axles = [];
         nextToolId = 1;
@@ -104,8 +109,8 @@
         controlsDiv.className = 'gearbox-controls';
         controlsDiv.innerHTML = `
             <div class="control-group">
-                <label for="num-gears">Number of Gears:</label>
-                <input type="number" id="num-gears" min="1" max="9" value="${numGears}">
+                <label for="num-gear-modes">Number of Gear Modes:</label>
+                <input type="number" id="num-gear-modes" min="1" max="9" value="${numGearModes}">
             </div>
             <button class="btn btn-primary" id="add-coupling">Add Coupling</button>
             <button class="btn btn-primary" id="add-selector">Add Selector</button>
@@ -114,10 +119,10 @@
         container.appendChild(controlsDiv);
 
         // Event listeners
-        document.getElementById('num-gears').addEventListener('change', (e) => {
+        document.getElementById('num-gear-modes').addEventListener('change', (e) => {
             const val = parseInt(e.target.value);
             if (val >= 1 && val <= 9) {
-                numGears = val;
+                numGearModes = val;
                 updateSelectorParams();
                 updateDiagram();
                 compute();
@@ -263,12 +268,12 @@
                 `;
             case 'selector':
                 let html = '';
-                for (let g = 1; g <= numGears; g++) {
-                    const sel = tool.params[`gear${g}`] || 'Free';
+                for (let g = 1; g <= numGearModes; g++) {
+                    const sel = tool.params[`mode${g}`] || 'Free';
                     html += `
                         <div class="param-row">
-                            <label>Gear ${g}:</label>
-                            <select class="param-input" data-param="gear${g}">
+                            <label>Mode ${g}:</label>
+                            <select class="param-input" data-param="mode${g}">
                                 <option value="A" ${sel === 'A' ? 'selected' : ''}>A</option>
                                 <option value="Free" ${sel === 'Free' ? 'selected' : ''}>Free</option>
                                 <option value="B" ${sel === 'B' ? 'selected' : ''}>B</option>
@@ -311,7 +316,7 @@
 
     function renderToolStatus(tool) {
         let html = '';
-        for (let g = 1; g <= numGears; g++) {
+        for (let g = 1; g <= numGearModes; g++) {
             const status = tool.status[g];
             let statusText = '';
             let statusClass = 'status-ok';
@@ -332,7 +337,7 @@
 
             html += `
                 <div class="status-item">
-                    <span class="gear-label">Gear ${g}:</span>
+                    <span class="mode-label">Mode ${g}:</span>
                     <span class="${statusClass}">${statusText}</span>
                 </div>
             `;
@@ -402,12 +407,12 @@
     }
 
     function updateSelectorParams() {
-        // Ensure all selector tools have params for all gears
+        // Ensure all selector tools have params for all gear modes
         for (const tool of tools) {
             if (tool.type === 'selector') {
-                for (let g = 1; g <= numGears; g++) {
-                    if (!tool.params[`gear${g}`]) {
-                        tool.params[`gear${g}`] = 'Free';
+                for (let g = 1; g <= numGearModes; g++) {
+                    if (!tool.params[`mode${g}`]) {
+                        tool.params[`mode${g}`] = 'Free';
                     }
                 }
             }
@@ -432,8 +437,8 @@
                 tool.connections.push(new Connection('Center', tool));
                 tool.connections.push(new Connection('A', tool));
                 tool.connections.push(new Connection('B', tool));
-                for (let g = 1; g <= numGears; g++) {
-                    tool.params[`gear${g}`] = 'Free';
+                for (let g = 1; g <= numGearModes; g++) {
+                    tool.params[`mode${g}`] = 'Free';
                 }
                 break;
             case 'differential':
@@ -514,16 +519,16 @@
 
         const allResults = {};
 
-        // Compute for each gear
-        for (let g = 1; g <= numGears; g++) {
-            allResults[g] = computeGear(g);
+        // Compute for each gear mode (1st gear, 2nd gear, etc.)
+        for (let g = 1; g <= numGearModes; g++) {
+            allResults[g] = computeGearMode(g);
         }
 
         // Update results display
         renderResultsChart(allResults);
     }
 
-    function computeGear(gearNum) {
+    function computeGearMode(gearModeNum) {
         // Track which axles have known values
         const axleValues = new Map();  // axleId -> { speed, torque, outputBy: toolId }
 
@@ -532,7 +537,7 @@
         if (sourceConn.axleId !== null) {
             axleValues.set(sourceConn.axleId, { speed: 1, torque: 1, outputBy: 'source' });
         }
-        sourceTool.status[gearNum] = { error: null, flagged: false };
+        sourceTool.status[gearModeNum] = { error: null, flagged: false };
 
         // Iterate until no changes (propagation)
         let changed = true;
@@ -546,10 +551,10 @@
             for (const tool of tools) {
                 if (tool.type === 'source') continue;
 
-                const result = evaluateTool(tool, gearNum, axleValues);
+                const result = evaluateTool(tool, gearModeNum, axleValues);
 
                 // Update tool status
-                tool.status[gearNum] = {
+                tool.status[gearModeNum] = {
                     error: result.error || null,
                     flagged: result.flagged || false
                 };
@@ -560,7 +565,7 @@
 
                     if (existing && existing.outputBy !== tool.id) {
                         // ERROR: multiple outputs to same axle
-                        tool.status[gearNum] = {
+                        tool.status[gearModeNum] = {
                             error: `Conflict with ${getToolLabel(existing.outputBy)}`,
                             flagged: false
                         };
@@ -584,33 +589,34 @@
         return toolId;
     }
 
-    function evaluateTool(tool, gearNum, axleValues) {
+    function evaluateTool(tool, gearModeNum, axleValues) {
         switch (tool.type) {
             case 'coupling':
-                return evaluateCoupling(tool, gearNum, axleValues);
+                return evaluateCoupling(tool, gearModeNum, axleValues);
             case 'selector':
-                return evaluateSelector(tool, gearNum, axleValues);
+                return evaluateSelector(tool, gearModeNum, axleValues);
             case 'differential':
-                return evaluateDifferential(tool, gearNum, axleValues);
+                return evaluateDifferential(tool, gearModeNum, axleValues);
             default:
                 return { flagged: true };
         }
     }
 
-    function evaluateCoupling(tool, gearNum, axleValues) {
-        const connA = tool.connections.find(c => c.name === 'Gear A');
-        const connB = tool.connections.find(c => c.name === 'Gear B');
+    function evaluateCoupling(tool, gearModeNum, axleValues) {
+        const connA = tool.connections.find(c => c.name === 'Gear A');  // Gear piece A
+        const connB = tool.connections.find(c => c.name === 'Gear B');  // Gear piece B
 
         if (!connA || !connB) return { flagged: true };
 
         const teethA = tool.params.teethA || 16;
         const teethB = tool.params.teethB || 16;
 
-        const hasInputA = connA.axleId !== null && axleValues.has(connA.axleId);
-        const hasInputB = connB.axleId !== null && axleValues.has(connB.axleId);
+        // Check if axles have inputs from OTHER tools (not this coupling)
+        const hasInputA = connA.axleId !== null && axleValues.has(connA.axleId) && axleValues.get(connA.axleId).outputBy !== tool.id;
+        const hasInputB = connB.axleId !== null && axleValues.has(connB.axleId) && axleValues.get(connB.axleId).outputBy !== tool.id;
 
         if (hasInputA && hasInputB) {
-            return { error: 'Both sides have inputs' };
+            return { error: 'Conflicting outputs' };
         }
 
         if (!hasInputA && !hasInputB) {
@@ -648,14 +654,15 @@
         };
     }
 
-    function evaluateSelector(tool, gearNum, axleValues) {
+    function evaluateSelector(tool, gearModeNum, axleValues) {
         const connCenter = tool.connections.find(c => c.name === 'Center');
         const connA = tool.connections.find(c => c.name === 'A');
         const connB = tool.connections.find(c => c.name === 'B');
 
         if (!connCenter || !connA || !connB) return { flagged: true };
 
-        const selection = tool.params[`gear${gearNum}`] || 'Free';
+        // Get selection for this gear mode (Mode 1, Mode 2, etc.)
+        const selection = tool.params[`mode${gearModeNum}`] || 'Free';
 
         if (selection === 'Free') {
             return { flagged: true };  // Nothing connected
@@ -664,11 +671,12 @@
         // Determine which connection is active
         const activeConn = selection === 'A' ? connA : connB;
 
-        const hasCenterInput = connCenter.axleId !== null && axleValues.has(connCenter.axleId);
-        const hasActiveInput = activeConn.axleId !== null && axleValues.has(activeConn.axleId);
+        // Check if axles have inputs from OTHER tools (not this selector)
+        const hasCenterInput = connCenter.axleId !== null && axleValues.has(connCenter.axleId) && axleValues.get(connCenter.axleId).outputBy !== tool.id;
+        const hasActiveInput = activeConn.axleId !== null && axleValues.has(activeConn.axleId) && axleValues.get(activeConn.axleId).outputBy !== tool.id;
 
         if (hasCenterInput && hasActiveInput) {
-            return { error: 'Both sides have inputs' };
+            return { error: 'Conflicting outputs' };
         }
 
         if (!hasCenterInput && !hasActiveInput) {
@@ -700,16 +708,17 @@
         };
     }
 
-    function evaluateDifferential(tool, gearNum, axleValues) {
+    function evaluateDifferential(tool, gearModeNum, axleValues) {
         const connBody = tool.connections.find(c => c.name === 'Body');
         const connA = tool.connections.find(c => c.name === 'A');
         const connB = tool.connections.find(c => c.name === 'B');
 
         if (!connBody || !connA || !connB) return { flagged: true };
 
-        const hasBodyInput = connBody.axleId !== null && axleValues.has(connBody.axleId);
-        const hasAInput = connA.axleId !== null && axleValues.has(connA.axleId);
-        const hasBInput = connB.axleId !== null && axleValues.has(connB.axleId);
+        // Check if axles have inputs from OTHER tools (not this differential)
+        const hasBodyInput = connBody.axleId !== null && axleValues.has(connBody.axleId) && axleValues.get(connBody.axleId).outputBy !== tool.id;
+        const hasAInput = connA.axleId !== null && axleValues.has(connA.axleId) && axleValues.get(connA.axleId).outputBy !== tool.id;
+        const hasBInput = connB.axleId !== null && axleValues.has(connB.axleId) && axleValues.get(connB.axleId).outputBy !== tool.id;
 
         const inputCount = (hasBodyInput ? 1 : 0) + (hasAInput ? 1 : 0) + (hasBInput ? 1 : 0);
 
@@ -718,7 +727,7 @@
         }
 
         if (inputCount === 3) {
-            return { error: 'All three have inputs' };
+            return { error: 'Conflicting outputs' };
         }
 
         // Exactly 2 inputs - the third becomes output
@@ -770,23 +779,23 @@
         // Use stored results if not provided
         if (!allResults) {
             allResults = {};
-            for (let g = 1; g <= numGears; g++) {
-                allResults[g] = computeGear(g);
+            for (let g = 1; g <= numGearModes; g++) {
+                allResults[g] = computeGearMode(g);
             }
         }
 
-        // Get values for selected axle
+        // Get values for selected axle across all gear modes
         const axleData = [];
         let maxSpeed = 0;
         let maxTorque = 0;
 
-        for (let g = 1; g <= numGears; g++) {
-            const gearResults = allResults[g];
-            const axleValue = gearResults.get(selectedAxleId);
+        for (let g = 1; g <= numGearModes; g++) {
+            const modeResults = allResults[g];
+            const axleValue = modeResults.get(selectedAxleId);
 
             if (axleValue) {
                 axleData.push({
-                    gear: g,
+                    mode: g,
                     speed: axleValue.speed,
                     torque: axleValue.torque,
                     error: null
@@ -795,7 +804,7 @@
                 maxTorque = Math.max(maxTorque, Math.abs(axleValue.torque));
             } else {
                 axleData.push({
-                    gear: g,
+                    mode: g,
                     speed: null,
                     torque: null,
                     error: 'No data'
@@ -817,7 +826,7 @@
         for (const data of axleData) {
             html += `
                 <div class="chart-row">
-                    <span class="gear-label">Gear ${data.gear}</span>
+                    <span class="mode-label">Mode ${data.mode}</span>
                     <div class="chart-bars">
             `;
 

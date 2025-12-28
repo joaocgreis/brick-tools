@@ -776,10 +776,10 @@ footer p {
   margin-bottom: 0.25rem;
 }
 
-.tool-status .gear-label {
+.tool-status .mode-label {
   font-weight: 500;
   color: var(--text-muted);
-  min-width: 45px;
+  min-width: 55px;
 }
 
 .tool-status .status-ok {
@@ -835,9 +835,9 @@ footer p {
   gap: 1rem;
 }
 
-.chart-row .gear-label {
+.chart-row .mode-label {
   font-weight: 500;
-  min-width: 60px;
+  min-width: 65px;
   color: var(--text-color);
 }
 
