@@ -1,0 +1,87 @@
+I want to make a web page application suitable to be published with GitHub Pages. The page will be called "Technic Brick Tools". It should be extensible, I shall be able to add new modules in the future. Let's start with 3 modules:
+- "Two Liftarm Dimensions": A tool that presents all the dimentions associated with two technic liftarms, locked in sequence. The `calc_doubleliftarms.coffee` file has my initial implementation. The `calc_triangles.coffee` is a subset of this (only shows S=I and Ty=0). The idea is:
+  - The user can specify the maximum length of liftarms A and B (in studs) to consider. Default to 5 for both.
+  - The user can specify if half stud lengths should be considered. Default to false.
+  - Liftarm A always starts at coordinate x=0, y=0 (liftarm A position 0).
+  - Consider (loop) all coordinates (x,y) with x>=0 and y<=x. Let's call the considered point T (for target). Liftarm B ends at T (liftarm B position B length). When looping, increment x and y by 0.5 if half stud lengths are enabled, otherwise by 1.
+  - For each considered point T, consider (loop) all dimentions of liftarms A and B up to the specified maximum lengths.
+  - The point where the liftarms connect (lift A position A length and liftarm B position 0) is called I (for interconnection). This is essentially the intersection of two circles: one centered at (0,0) with radius equal to liftarm A length, and the other centered at T with radius equal to liftarm B length. So, there can be 0, 1 or 2 possible intersection points. Loop the coordinated for T until the number of intersection points is 0.
+  - For each valid configuration (T, A length, B length, I point), consider all positions of liftarm A (from 0 to A length): let's call this the S point (for stud, as in the sequential number of the stud in liftarm A).
+  - For each S point, present the data in a table. The table columns are:
+    - S point x coordinate
+    - S point y coordinate
+    - S point number in liftarm A (from 1 to A length, we ignore 0 because it's always at (0,0))
+    - Liftarm A length
+    - Liftarm B length
+    - T point x coordinate
+    - T point y coordinate
+    - I point x coordinate
+    - I point y coordinate
+    - Angle from the x axis to liftarm A (in degrees)
+    - Angle from the x axis to the line created by extending liftarm B (in degrees)
+    - Minumum angle between liftarm A and liftarm B (in degrees)
+  - The table must allow filtering on any column, and sorting by any column.
+  - There should be a dropdown of filter presets for common use cases in a dropdown above the table
+    - "Hypotenuses": Iy=0 and Tx=Ix (so liftarm A is horizontal and liftarm B is vertical).
+    - "Catheti": Ix=Tx and Ty=0 (so liftarm A is the hypotenuse and liftarm B is vertical).
+    - "90 degrees": minimum angle between liftarm A and liftarm B is 90 degrees.
+- "Gear Couplings": A tool that presents all the possible gear couplings between two technic gears. This is a new tool, there is now example. The idea is:
+  - The user can specify the number of teeth (same for both gears A and B) to consider using checkboxes. Options are: 1(1L), 1(2L), 8, 12, 16, 20, 24, 28, 36, 40, and custom (where the user can input any positive integer). By default, 1 to 24 teeth are selected.
+  - The user can specify the maximum overfit distance (in studs). Default to 0.2 studs.
+  - The user can specify the minimum underfit distance (in studs). Default to 0.1 studs.
+  - A gear with 1 tooth is a worm gear. There are two types of worm gears: 1(1L) and 1(2L). The 1(1L) has a radius of 0.75 studs, while the 1(2L) has a radius of 0.5 studs. The 1 tooth gears can only be drivers (gear A).
+  - For each combination of gear A and gear B teeth counts (up to the specified maximums), present the data in a table. The table columns are:
+    - A: Gear A
+    - B: Gear B
+    - Ratio: Gear ratio (as a decimal, always fixed to 2 decimal places)
+    - Dist: Center distance (in studs, as a decimal, always fixed to 3 decimal places) (= (Gear A teeth count + Gear B teeth count) / 16)
+    - Exact: List of exact connection options, pairs of coordinates (x,y) for which the distance to (0,0) is exactly equal to the center distance. Always consider half-studs (e.g., 1.5×2.5). Always show numbers with one decimal place. Show only positive numbers where x>=y. Separate list items with '; '. Always show the exact column values with black text.
+    - Overfit: List of overfit connection options, pairs of coordinates (x,y) for which the distance to (0,0) is greater than the center distance but less than or equal to center distance + maximum overfit distance. Always consider half-studs (e.g., 1.5×2.5). Always show numbers with one decimal place. Show only positive numbers where x>=y. Show the exact distance between parenthesis with 3 decimal places. Separate list items with '; '. Always show the overfit column values with green text when the number is <= center distance + 0.05, and orange text when the number is > center distance + 0.05 and <= center distance + 0.1, and red text when the number is > center distance + 0.1.
+    - Underfit: List of underfit connection options, pairs of coordinates (x,y) for which the distance to (0,0) is less than the center distance but greater than or equal to center distance - minimum underfit distance. Always consider half-studs (e.g., 1.5×2.5). Always show numbers with one decimal place. Show only positive numbers where x>=y. Show the exact distance between parenthesis with 3 decimal places. Separate list items with '; '. Always show the underfit column values with red text.
+  - The table must allow filtering on any column, and sorting by any column.
+  - Example:
+    - A: 20
+    - B: 20
+    - Ratio: 1.00
+    - Dist: 2.500
+    - Exact: 2.5×0.0; 2.0×1.5
+    - Overfit: 2.5×0.5 (2.550)
+    - Underfit: --
+- "Gearbox Calculator": A tool that helps design complex gearboxes using a dynamically built diagram. The file `calc_gearbox7.cpp` is an optimizer for gearboxes, but it is not interactive and considers only some fixed configurations of gearboxes. This tool does not optimize, but instead show exactly what happens on a user-defined gearbox for specific cases. The idea is:
+  - The user specifies the number of gears. The speeds and torques of each axle in the diagram are computed independently for each gear.
+  - Axles are implicit in the diagram, they are represented by connections between tools when 2 or more tools are connected to it.
+  - The diagram is composed of different "tools" that can be dynamically added by the user. Each tool represents a transformation of rotational speed/torque between axles.
+  - Each tool has connections, that represent connections to an axle. A connection can be an input or an output depending on the tool type and the gear.
+  - Each axle should have exactly one tool that outputs to it, depending on the gear. The tool that outputs to an axle can be different for different gears.
+  - Available tools:
+    - "Coupling": represents two connected gears.
+      - Connections: two connections, one for Gear A and one for Gear B. When one of the gears is connected to an axle that is connected to some other tool that outputs to it, then that gear is considered an input, and the other gear is forced to be an output. If the other gear is connected to an axle that already has some tool outputting to it for the same gear, this is considered an error and must be indicated to the user. If both gears are connected to axles that do not have any tool outputting to them for some gear, then this "Coupling" tool must be flagged but it's not considered an error (just becomes a no-op for that gear).
+      - Parameters: the user can specify the number of teeth for each gear. The number of teeth is the same for all gears. So, two input boxes: Gear A teeth and Gear B teeth.
+      - The output speed/torque is calculated as:
+        - output axle speed = input axle speed * (input gear teeth / output gear teeth)
+        - output axle torque = input axle torque * (output gear teeth / input gear teeth)
+    - "Selector": represents a rotary catch selector.
+      - Connections: 3 connections: one for the "center axle", and two for A and B gears.
+      - Parameters: the user must select, for each gear, from 3 options: "A", "free", "B".
+        - When the user selects "A", the center axle is connected to gear A - if A is connected to an axle that has some tool outputting to it for that specific gear, then A is an input and the center axle becomes an output. If the center axle is connected to an axle that already has some tool outputting to it for the same gear, then A becomes an output. In both cases, B is ignored. Speed and torque are transmitted unchanged from input to output.
+        - The behavior is similar when the user selects "B", but for connection B.
+        - When the user selects "free", nothing is connected, and no speed/torque is transmitted from/to any axle.
+    - "Differential": represents a differential gear.
+      - Connections: 3 connections: one for the "body" axle, and two for A and B connections.
+      - Parameters: none.
+      - For all gears, the tool is active if exactly two connections are connected to axles that have some tool outputting to them for that specific gear, and the other connection becomes the output. If there are less than two inputs, the tool must be flagged but it's not considered an error (just becomes a no-op for that gear). If all three connections are inputs, this is considered an error and must be indicated to the user.
+      - The output speed/torque is calculated as:
+        - If "body" is one of the inputs:
+          - output axle speed = 2 * input axle speed - other input axle speed
+          - output axle torque = (input axle torque + other input axle torque) / 2
+        - If "body" is the output:
+          - output axle speed = (input axle speed A + input axle speed B) / 2
+          - output axle torque = 2 * (input axle torque A + input axle torque B)
+  - The user must be able to dynamically add/remove tools to/from the diagram.
+  - The diagram has an initial "tool" that cannot be changed called "Source Axle" with a fixed speed and torque of 1. This can only be connected to other tools as an input.
+  - No units are used. Speed and torque are always relative to the input axle.
+  - The page should display, below the diagram, a chart of speed and torque for each gear, for a selectable axle.
+
+In `_ref` (I like to start temporary file names with `_`, as is ignored in `.gitignore`) I have several examples of tools that I previously built that partially accomplish some of this, for you to use as reference. Please take a look at them.
+
+Make heavy use of #tool:submodule to keep the context manageable during implementation. Use a submodule for the initial implementation of the page structure and layout. Then use separate submodules for each of the three modules.

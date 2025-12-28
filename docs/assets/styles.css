@@ -1,0 +1,150 @@
+/* Basic layout */
+:root {
+  --bg: #0c0f12;
+  --fg: #e6e8eb;
+  --muted: #aeb4bd;
+  --accent: #4aa3ff;
+  --green: #32c766;
+  --orange: #ff9f40;
+  --red: #ff4d4f;
+  --panel: #151a20;
+  --panel-border: #222a33;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--panel-border);
+  background: var(--panel);
+}
+
+.site-header h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.site-nav a {
+  color: var(--fg);
+  text-decoration: none;
+  margin: 0 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.site-nav a:hover {
+  background: #1a2028;
+}
+
+main {
+  padding: 16px;
+}
+
+.view {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.site-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--panel-border);
+  color: var(--muted);
+}
+
+/* Form styles */
+.form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.form-row label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.form-row input,
+.form-row select,
+.form-row button {
+  margin-top: 6px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: #0f1318;
+  color: var(--fg);
+}
+
+button.primary {
+  background: var(--accent);
+  color: #001022;
+  border: none;
+}
+
+/* Tabulator overrides for dark theme */
+.tabulator {
+  background: #0f1318;
+  color: var(--fg);
+  border: 1px solid var(--panel-border);
+}
+
+.tabulator .tabulator-header {
+  background: #131922;
+}
+
+.tabulator-row {
+  border-bottom: 1px solid #1c2430;
+}
+
+.tabulator-cell {
+  border-right: 1px solid #1c2430;
+}
+
+/* Color helpers for text */
+.text-green {
+  color: var(--green);
+}
+
+.text-orange {
+  color: var(--orange);
+}
+
+.text-red {
+  color: var(--red);
+}
+
+.text-black {
+  color: #000000;
+}
+
+/* Module titles */
+.module-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.module-desc {
+  margin: 6px 0 16px;
+  color: var(--muted);
+}
