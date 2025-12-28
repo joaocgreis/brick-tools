@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Technic Brick Tools</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <header>
+    <h1>Technic Brick Tools</h1>
+    <p class="description">Engineering tools for LEGO Technic builders</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-button active" data-module="liftarms-module">Two Liftarm Dimensions</button>
+    <button class="tab-button" data-module="gears-module">Gear Couplings</button>
+    <button class="tab-button" data-module="gearbox-module">Gearbox Calculator</button>
+  </nav>
+
+  <main class="content">
+    <div id="liftarms-module" class="module-container active"></div>
+    <div id="gears-module" class="module-container"></div>
+    <div id="gearbox-module" class="module-container"></div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Technic Brick Tools. All rights reserved.</p>
+  </footer>
+
+  <script src="lib/table.js"></script>
+  <script src="app.js"></script>
+  <script src="modules/liftarms.js"></script>
+  <script src="modules/gears.js"></script>
+  <script src="modules/gearbox.js"></script>
+</body>
+
+</html>
