@@ -254,16 +254,31 @@
     function renderToolParams(tool) {
         switch (tool.type) {
             case 'coupling':
+                const teethA = tool.params.teethA || 16;
+                const teethB = tool.params.teethB || 16;
+                const gearRatio = (teethA / teethB).toFixed(2);
+                const invertDir = tool.params.invertDirection !== undefined ? tool.params.invertDirection : true;
                 return `
                     <div class="param-row">
                         <label>Teeth A:</label>
                         <input type="number" class="param-input" data-param="teethA" 
-                               min="1" step="4" value="${tool.params.teethA || 16}">
+                               min="1" step="4" value="${teethA}">
                     </div>
                     <div class="param-row">
                         <label>Teeth B:</label>
                         <input type="number" class="param-input" data-param="teethB" 
-                               min="8" step="4" value="${tool.params.teethB || 16}">
+                               min="8" step="4" value="${teethB}">
+                    </div>
+                    <div class="param-row">
+                        <label>
+                            <input type="checkbox" class="param-input" data-param="invertDirection" 
+                                   ${invertDir ? 'checked' : ''}>
+                            Invert direction
+                        </label>
+                    </div>
+                    <div class="param-row">
+                        <label>Gear ratio:</label>
+                        <span>${gearRatio}</span>
                     </div>
                 `;
             case 'selector':
@@ -356,7 +371,9 @@
             input.addEventListener('change', (e) => {
                 const paramName = e.target.dataset.param;
                 let value = e.target.value;
-                if (e.target.type === 'number') {
+                if (e.target.type === 'checkbox') {
+                    value = e.target.checked;
+                } else if (e.target.type === 'number') {
                     value = parseInt(value);
                     
                     // Special handling for teeth inputs
@@ -479,6 +496,7 @@
                 tool.connections.push(new Connection('Gear B', tool));
                 tool.params.teethA = 16;
                 tool.params.teethB = 16;
+                tool.params.invertDirection = true;
                 break;
             case 'selector':
                 tool.connections.push(new Connection('Center', tool));
@@ -689,7 +707,10 @@
         }
 
         const input = axleValues.get(inputConn.axleId);
-        const outputSpeed = input.speed * (inputTeeth / outputTeeth);
+        // Gears reverse direction if invertDirection is enabled
+        const invertDirection = tool.params.invertDirection !== undefined ? tool.params.invertDirection : true;
+        const directionMultiplier = invertDirection ? -1 : 1;
+        const outputSpeed = directionMultiplier * input.speed * (inputTeeth / outputTeeth);
         const outputTorque = input.torque * (outputTeeth / inputTeeth);
 
         return {
