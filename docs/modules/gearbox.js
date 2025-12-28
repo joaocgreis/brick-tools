@@ -258,12 +258,12 @@
                     <div class="param-row">
                         <label>Teeth A:</label>
                         <input type="number" class="param-input" data-param="teethA" 
-                               min="8" max="40" value="${tool.params.teethA || 16}">
+                               min="1" step="4" value="${tool.params.teethA || 16}">
                     </div>
                     <div class="param-row">
                         <label>Teeth B:</label>
                         <input type="number" class="param-input" data-param="teethB" 
-                               min="8" max="40" value="${tool.params.teethB || 16}">
+                               min="8" step="4" value="${tool.params.teethB || 16}">
                     </div>
                 `;
             case 'selector':
@@ -348,11 +348,58 @@
     function attachParamListeners(paramsDiv, tool) {
         const inputs = paramsDiv.querySelectorAll('.param-input');
         inputs.forEach(input => {
+            // Store initial value
+            if (input.type === 'number' && (input.dataset.param === 'teethA' || input.dataset.param === 'teethB')) {
+                input.dataset.prevValue = input.value;
+            }
+            
             input.addEventListener('change', (e) => {
                 const paramName = e.target.dataset.param;
                 let value = e.target.value;
                 if (e.target.type === 'number') {
                     value = parseInt(value);
+                    
+                    // Special handling for teeth inputs
+                    if (paramName === 'teethA' || paramName === 'teethB') {
+                        const prevValue = parseInt(e.target.dataset.prevValue) || 16;
+                        const min = paramName === 'teethA' ? 1 : 8;
+                        
+                        // Check if value is valid: 1 (A only), 8, 12, 16, 20, ...
+                        const isValid = (value === 1 && paramName === 'teethA') || 
+                                       (value >= 8 && (value - 8) % 4 === 0);
+                        
+                        if (!isValid) {
+                            // Determine direction
+                            const goingUp = value > prevValue;
+                            
+                            if (goingUp) {
+                                // Jump to next valid value above
+                                if (value < 8) {
+                                    value = 8;
+                                } else {
+                                    value = Math.ceil((value - 8) / 4) * 4 + 8;
+                                }
+                            } else {
+                                // Jump to next valid value below
+                                if (paramName === 'teethA' && value < 8 && value >= 1) {
+                                    value = 1;
+                                } else if (value < 8) {
+                                    value = min;
+                                } else {
+                                    value = Math.floor((value - 8) / 4) * 4 + 8;
+                                    if (value < min) value = min;
+                                }
+                            }
+                        }
+                        
+                        // Ensure minimum
+                        if (value < min) {
+                            value = min;
+                        }
+                        
+                        e.target.value = value;
+                        e.target.dataset.prevValue = value;
+                    }
                 }
                 updateParam(tool.id, paramName, value);
             });
