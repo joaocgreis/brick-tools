@@ -1,6 +1,6 @@
 /**
  * TechnicTools - Main Application
- * Engineering tools for LEGO Technic builders
+ * Engineering tools for Technic Brick builders
  */
 const TechnicTools = (function() {
     'use strict';

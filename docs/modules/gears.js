@@ -1,6 +1,6 @@
 /**
  * Gears Module - Gear Couplings Calculator
- * Calculates all possible gear coupling configurations between two LEGO Technic gears,
+ * Calculates all possible gear coupling configurations between two Technic Brick gears,
  * showing exact, overfit, and underfit mounting positions.
  */
 (function() {
@@ -453,7 +453,7 @@
         header.className = 'module-header';
         header.innerHTML = `
             <h2>Gear Couplings Calculator</h2>
-            <p>Calculate all possible gear coupling configurations between two LEGO Technic gears, 
+            <p>Calculate all possible gear coupling configurations between two Technic Brick gears, 
             showing exact, overfit, and underfit mounting positions.</p>
         `;
         container.appendChild(header);

@@ -2,7 +2,7 @@
 
 ## Project Architecture
 
-**Technic Brick Tools** is a vanilla JS web app (no build step) for calculating LEGO Technic configurations. It's deployed on GitHub Pages from the `docs/` folder.
+**Technic Brick Tools** is a vanilla JS web app (no build step) for calculating Technic Brick configurations. It's deployed on GitHub Pages from the `docs/` folder.
 
 ### Module System
 - **Core**: `docs/app.js` - Module registration pattern using `TechnicTools` namespace (IIFE-based)
@@ -164,5 +164,4 @@ table.render();
 ## Reference & Documentation
 
 - `README.md` - User-facing guide, deployment, extending instructions
-- `_ref/` folder - Original CoffeeScript/C++ implementations (for algorithm verification, not used by app)
 - Inline comments in modules explain complex math (e.g., circle intersection in liftarms.js L35-60)

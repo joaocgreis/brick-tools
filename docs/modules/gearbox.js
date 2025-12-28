@@ -1,6 +1,6 @@
 /**
  * Gearbox Module - Gearbox Calculator
- * Calculates gear ratios and configurations for LEGO Technic gearboxes.
+ * Calculates gear ratios and configurations for Technic Brick gearboxes.
  * Allows users to design gearboxes by adding tools (Coupling, Selector, Differential)
  * and connecting them. Calculates speed and torque for each axle across multiple gears.
  */

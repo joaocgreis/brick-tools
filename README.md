@@ -1,8 +1,8 @@
 # Technic Brick Tools
 
-A web application providing engineering calculation tools for LEGO Technic builders. Build complex mechanisms by calculating liftarm positions, gear couplings, and gearbox configurations.
+A web application providing engineering calculation tools for Technic Brick builders. Build complex mechanisms by calculating liftarm positions, gear couplings, and gearbox configurations.
 
-**Live Demo**: https://yourusername.github.io/Bricks_page (once deployed to GitHub Pages)
+**Live Demo**: https://joaocgreis.github.io/brick-tools (once deployed to GitHub Pages)
 
 ## Features
 
@@ -39,7 +39,7 @@ Calculates all positions reachable by two technic liftarms locked in sequence.
   - Automatic deduplication
 
 ### 2. Gear Couplings
-Calculates all possible gear coupling configurations between two LEGO Technic gears.
+Calculates all possible gear coupling configurations between two Technic Brick gears.
 
 - **Input Controls**:
   - Gear teeth selection: checkboxes for 1(1L), 1(2L), 8, 12, 16, 20, 24, 28, 36, 40
@@ -115,12 +115,6 @@ docs/
     ├── liftarms.js         # Liftarms calculator
     ├── gears.js            # Gear couplings calculator
     └── gearbox.js          # Gearbox designer
-_ref/
-├── calc_doubleliftarms.coffee  # Reference implementation
-├── calc_triangles.coffee        # Reference implementation
-├── calc_GearCoupling.h          # Reference implementation
-├── calc_gearbox7.cpp            # Reference implementation
-└── ...
 ```
 
 ## Running Locally
@@ -189,7 +183,7 @@ http-server
 
 Ensure the `docs` folder contains all files. The structure should be:
 ```
-Bricks_page/
+brick-tools/
 ├── docs/
 │   ├── index.html
 │   ├── app.js
@@ -201,7 +195,6 @@ Bricks_page/
 │       ├── liftarms.js
 │       ├── gears.js
 │       └── gearbox.js
-├── _ref/
 ├── README.md
 └── ...
 ```
@@ -225,7 +218,7 @@ git push origin main
 4. Click "Save"
 5. Wait 1-2 minutes for deployment
 
-Your site will be available at: `https://<username>.github.io/Bricks_page/`
+Your site will be available at: `https://<username>.github.io/brick-tools/`
 
 ### Verify Deployment
 
@@ -332,22 +325,6 @@ When adding features:
 4. Test locally before deploying
 5. Update README with new features
 
-## License
-
-LEGO® is a trademark of The LEGO Group. This project is for educational purposes.
-
-## Reference Materials
-
-The `_ref` folder contains original implementations:
-- `calc_doubleliftarms.coffee`: Circle intersection algorithm reference
-- `calc_GearCoupling.h`: Gear coupling formulas
-- `calc_gearbox7.cpp`: Gearbox optimization reference
-- `calc_triangles.coffee`: Triangle calculation reference
-- `point.coffee`: 2D point utilities reference
-- `ThreadPool.h`: Parallel processing reference
-
-These files are available for algorithm verification and are not used by the web application.
-
 ## Troubleshooting
 
 ### Application won't load
@@ -369,7 +346,3 @@ These files are available for algorithm verification and are not used by the web
 - Reduce max length inputs
 - Disable half-stud option
 - Use a modern browser (Chrome/Firefox are fastest)
-
-## Support
-
-For issues or feature requests, refer to the reference materials in `_ref` for algorithm details.
