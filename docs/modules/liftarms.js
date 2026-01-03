@@ -100,10 +100,10 @@
         // Reasonable max for Tx based on max reachable distance
         const maxReach = maxA + maxB;
 
-        for (let tx = 0; tx <= maxReach; tx += step) {
+        for (let tx = -maxReach; tx <= maxReach; tx += step) {
             let foundAnyForTx = false;
 
-            for (let ty = 0; ty <= tx; ty += step) {
+            for (let ty = -maxReach; ty <= maxReach; ty += step) {
                 const T = new Point(tx, ty);
                 let foundAny = false;
 
