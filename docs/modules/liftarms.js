@@ -4,7 +4,7 @@
  * Liftarm A starts at origin (0,0), connects to Liftarm B at point I (intersection),
  * and Liftarm B ends at point T (target).
  */
-(function() {
+(function () {
     'use strict';
 
     /**
@@ -73,6 +73,36 @@
     }
 
     /**
+     * Calculate angle (in degrees) at `vertex` between vectors (vertex - pointA) and (pointB - vertex).
+     * Returns 0 if either vector has (near) zero length to avoid NaN.
+     * @param {Point} vertex - Point where angle is measured
+     * @param {Point} pointA - First point (forms vector from vertex to pointA)
+     * @param {Point} pointB - Second point (forms vector from vertex to pointB)
+     * @returns {number} Angle in degrees between the two vectors
+     */
+    function angleAt(vertex, pointA, pointB) {
+        // v1 = pointA - vertex
+        const v1x = pointA.x - vertex.x;
+        const v1y = pointA.y - vertex.y;
+        // v2 = pointB - vertex
+        const v2x = pointB.x - vertex.x;
+        const v2y = pointB.y - vertex.y;
+
+        const norm1 = Math.sqrt(v1x * v1x + v1y * v1y);
+        const norm2 = Math.sqrt(v2x * v2x + v2y * v2y);
+
+        // Avoid division by zero / invalid acos
+        if (norm1 < 1e-12 || norm2 < 1e-12) {
+            return 0;
+        }
+
+        const dot = v1x * v2x + v1y * v2y;
+        let cosAngle = dot / (norm1 * norm2);
+        cosAngle = Math.max(-1, Math.min(1, cosAngle));
+        return Math.acos(cosAngle) * 180 / Math.PI;
+    }
+
+    /**
      * Create a unique key for deduplication
      * @param {number} sx - S.x coordinate
      * @param {number} sy - S.y coordinate
@@ -116,9 +146,12 @@
                             foundAnyForTx = true;
 
                             for (const I of intersections) {
-                                // Only consider I points in first quadrant with Iy <= Ix
-                                // Using small tolerance for floating point comparison
-                                if (I.x < -0.001 || I.y < -0.001 || I.y > I.x + 0.001) {
+                                // // Only consider I points in first quadrant with Iy <= Ix
+                                // // Using small tolerance for floating point comparison
+                                // if (I.x < -0.001 || I.y < -0.001 || I.y > I.x + 0.001) {
+                                //     continue;
+                                // }
+                                if (I.x < 0 || I.y < 0) {
                                     continue;
                                 }
 
@@ -137,18 +170,15 @@
 
                                     // Calculate angles
                                     const angleA = Math.atan2(I.y, I.x) * 180 / Math.PI;
-
                                     // Angle of liftarm B (from I to T)
                                     const angleB = Math.atan2(T.y - I.y, T.x - I.x) * 180 / Math.PI;
+                                    // Angle of liftarm C (from origin to T)
+                                    const angleC = Math.atan2(T.y, T.x) * 180 / Math.PI;
 
-                                    // Minimum angle between liftarms using dot product
-                                    // v1 = I - origin = (I.x, I.y)
-                                    // v2 = T - I = (T.x - I.x, T.y - I.y)
-                                    const dot = I.x * (T.x - I.x) + I.y * (T.y - I.y);
-                                    const cosAngle = dot / (aLen * bLen);
-                                    // Clamp to avoid floating point errors with acos
-                                    const clampedCos = Math.max(-1, Math.min(1, cosAngle));
-                                    const minAngle = Math.acos(clampedCos) * 180 / Math.PI;
+                                    // Triangle corner angles
+                                    const angleAB = angleAt(I, origin, T);
+                                    const angleAC = angleAt(origin, I, T);
+                                    const angleBC = angleAt(T, origin, I);
 
                                     results.push({
                                         sx: parseFloat(formatNumber(S.x, 3)),
@@ -164,7 +194,10 @@
                                         iy: parseFloat(formatNumber(I.y, 3)),
                                         angleA: parseFloat(formatNumber(angleA, 1)),
                                         angleB: parseFloat(formatNumber(angleB, 1)),
-                                        minAngle: parseFloat(formatNumber(minAngle, 1))
+                                        angleC: parseFloat(formatNumber(angleC, 1)),
+                                        angleAB: parseFloat(formatNumber(angleAB, 1)),
+                                        angleAC: parseFloat(formatNumber(angleAC, 1)),
+                                        angleBC: parseFloat(formatNumber(angleBC, 1))
                                     });
                                 }
                             }
@@ -206,16 +239,16 @@
                 name: 'Hypotenuses',
                 // Iy = 0 AND Tx = Ix (liftarm A horizontal, liftarm B vertical)
                 filterFn: (row) => {
-                    return Math.abs(row.iy) < tolerance && 
-                           Math.abs(row.tx - row.ix) < tolerance;
+                    return Math.abs(row.iy) < tolerance &&
+                        Math.abs(row.tx - row.ix) < tolerance;
                 }
             },
             {
                 name: 'Catheti',
                 // Ix = Tx AND Ty = 0 (liftarm B vertical from T on x-axis)
                 filterFn: (row) => {
-                    return Math.abs(row.ix - row.tx) < tolerance && 
-                           Math.abs(row.ty) < tolerance;
+                    return Math.abs(row.ix - row.tx) < tolerance &&
+                        Math.abs(row.ty) < tolerance;
                 }
             },
             {
@@ -246,7 +279,7 @@
         header.className = 'module-header';
         header.innerHTML = `
             <h2>Two Liftarm Dimensions Calculator</h2>
-            <p>Calculate all positions reachable by two connected liftarms. Liftarm A starts at origin (0,0), 
+            <p>Calculate all positions reachable by two connected liftarms. Liftarm A starts at origin (0,0),
             connects to Liftarm B at point I (intersection), and Liftarm B ends at point T (target).</p>
         `;
         container.appendChild(header);
@@ -318,19 +351,22 @@
 
         // Define table columns
         const columns = [
-            { key: 'sx', label: 'S.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'sy', label: 'S.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'sNum', label: 'S#', type: 'number' },
-            { key: 'aLen', label: 'A Len', type: 'number' },
-            { key: 'bLen', label: 'B Len', type: 'number' },
-            { key: 'cLen', label: 'C Len', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'tx', label: 'T.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'ty', label: 'T.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'ix', label: 'I.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'iy', label: 'I.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'angleA', label: '∠A°', type: 'number', formatter: (v) => formatNumber(v, 1) },
-            { key: 'angleB', label: '∠B°', type: 'number', formatter: (v) => formatNumber(v, 1) },
-            { key: 'minAngle', label: 'Min∠°', type: 'number', formatter: (v) => formatNumber(v, 1) }
+            { key: 'sx', label: 'Stud.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'sy', label: 'Stud.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'sNum', label: 'Stud # (in A)', type: 'number' },
+            { key: 'aLen', label: 'A Length', type: 'number' },
+            { key: 'bLen', label: 'B Length', type: 'number' },
+            { key: 'cLen', label: 'C Length', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'tx', label: 'Target.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'ty', label: 'Target.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'ix', label: 'Intersection.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'iy', label: 'Intersection.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'angleA', label: '∠A° (to x-axis)', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'angleB', label: '∠B° (to x-axis)', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'angleC', label: '∠C° (to x-axis)', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'angleAB', label: '∠AB° (at I)', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'angleAC', label: '∠AC° (at 0)', type: 'number', formatter: (v) => formatNumber(v, 3) },
+            { key: 'angleBC', label: '∠BC° (at T)', type: 'number', formatter: (v) => formatNumber(v, 3) }
         ];
 
         // Create DataTable instance
