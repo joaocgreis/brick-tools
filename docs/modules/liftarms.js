@@ -156,6 +156,8 @@
                                         sNum: sNum,
                                         aLen: aLen,
                                         bLen: bLen,
+                                        // C is defined from origin to T
+                                        cLen: parseFloat(formatNumber(origin.distanceTo(T), 3)),
                                         tx: parseFloat(formatNumber(T.x, 3)),
                                         ty: parseFloat(formatNumber(T.y, 3)),
                                         ix: parseFloat(formatNumber(I.x, 3)),
@@ -321,6 +323,7 @@
             { key: 'sNum', label: 'S#', type: 'number' },
             { key: 'aLen', label: 'A Len', type: 'number' },
             { key: 'bLen', label: 'B Len', type: 'number' },
+            { key: 'cLen', label: 'C Len', type: 'number', formatter: (v) => formatNumber(v, 3) },
             { key: 'tx', label: 'T.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
             { key: 'ty', label: 'T.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
             { key: 'ix', label: 'I.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
