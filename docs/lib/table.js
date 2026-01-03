@@ -189,6 +189,18 @@ class DataTable {
     }
 
     /**
+     * New helper to update the count display
+     */
+    updateCountDisplay() {
+        if (!this.container) return;
+        const el = this.container.querySelector('.data-table-count');
+        if (!el) return;
+        const total = Array.isArray(this.data) ? this.data.length : 0;
+        const shown = Array.isArray(this.filteredData) ? this.filteredData.length : 0;
+        el.textContent = `Showing ${shown} of ${total} entries`;
+    }
+
+    /**
      * Render the complete table
      */
     render() {
@@ -199,6 +211,12 @@ class DataTable {
 
         // Clear container
         this.container.innerHTML = '';
+
+        // Add count display above table
+        const countDiv = document.createElement('div');
+        countDiv.className = 'data-table-count';
+        countDiv.textContent = ''; // will be set by updateCountDisplay
+        this.container.appendChild(countDiv);
 
         // Add preset dropdown
         const presetDropdown = this.renderPresetDropdown();
@@ -309,6 +327,9 @@ class DataTable {
 
         wrapper.appendChild(table);
         this.container.appendChild(wrapper);
+
+        // Ensure count is up-to-date after full render
+        this.updateCountDisplay();
     }
 
     /**
@@ -328,6 +349,9 @@ class DataTable {
             cell.style.color = '#64748b';
             row.appendChild(cell);
             tbody.appendChild(row);
+
+            // Update counts when body changes
+            this.updateCountDisplay();
             return;
         }
 
@@ -360,6 +384,9 @@ class DataTable {
 
             tbody.appendChild(row);
         });
+
+        // Update counts when body changes
+        this.updateCountDisplay();
     }
 }
 
