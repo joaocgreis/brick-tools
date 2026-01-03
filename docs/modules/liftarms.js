@@ -108,7 +108,7 @@
                 let foundAny = false;
 
                 for (let aLen = 1; aLen <= maxA; aLen += step) {
-                    for (let bLen = 1; bLen <= maxB; bLen += step) {
+                    for (let bLen = 0; bLen <= maxB; bLen += step) {
                         const intersections = origin.circleIntersections(aLen, T, bLen);
 
                         if (intersections.length > 0) {
