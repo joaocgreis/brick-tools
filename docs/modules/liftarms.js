@@ -128,12 +128,12 @@
                                     const ratio = sNum / aLen;
                                     const S = new Point(I.x * ratio, I.y * ratio);
 
-                                    // Create key for deduplication
-                                    const key = createKey(S.x, S.y, aLen, bLen);
-                                    if (seen.has(key)) {
-                                        continue;
-                                    }
-                                    seen.add(key);
+                                    // // Create key for deduplication
+                                    // const key = createKey(S.x, S.y, aLen, bLen);
+                                    // if (seen.has(key)) {
+                                    //     continue;
+                                    // }
+                                    // seen.add(key);
 
                                     // Calculate angles
                                     const angleA = Math.atan2(I.y, I.x) * 180 / Math.PI;
