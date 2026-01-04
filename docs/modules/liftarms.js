@@ -118,6 +118,208 @@
     }
 
     /**
+     * Download data as PDF file
+     * @param {Object[]} data - Array of data objects
+     * @param {Object[]} columns - Column definitions with key, label, formatter
+     * @param {Object} options - Options including title and selected parameters
+     * @param {string} filename - Name of the file to download
+     */
+    function downloadPDF(data, columns, options, filename) {
+        const { jsPDF } = window.jspdf;
+
+        // A4 page size in mm
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const margin = 15; // 1.5 cm margin
+        const contentWidth = pageWidth - 2 * margin;
+
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        // Use Georgia as serif font with tabular numbers (fallback to Times)
+        // jsPDF has built-in Times font which is serif
+        doc.setFont('times', 'normal');
+
+        // Calculate column widths proportionally
+        const colWidths = columns.map(() => contentWidth / columns.length);
+
+        // Font sizes (in points, not mm!)
+        const titleFontSize = 14;
+        const optionsFontSize = 9;
+        const headerFontSize = 8;
+        const cellFontSize = 7;
+        const pageNumFontSize = 9;
+
+        // Line heights in mm (convert points to mm: 1 point ≈ 0.3528 mm)
+        const titleLineHeight = titleFontSize * 0.3528;
+        const optionsLineHeight = optionsFontSize * 0.3528;
+        const headerLineHeight = headerFontSize * 0.3528;
+        const cellLineHeight = cellFontSize * 0.3528;
+
+        // Spacing in mm
+        const lineSpacing = 1.2; // spacing between lines of text
+        const sectionSpacing = 3; // spacing between sections
+
+        // Build options as array (one per line)
+        const optionsLines = [
+            `A Length: ${options.minA} - ${options.maxA}`,
+            `B Length: ${options.minB} - ${options.maxB}`,
+            `Half Studs: ${options.halfStuds ? 'Yes' : 'No'}`,
+            `Decimal Range: ${options.minDecimal} - ${options.maxDecimal}`,
+            `Complementary Decimal: ${options.includeComplementaryDecimal ? 'Yes' : 'No'}`,
+            `Remove Larger: ${options.removeLarger ? 'Yes' : 'No'}`,
+            `Remove y > x: ${options.removeYGreaterX ? 'Yes' : 'No'}`,
+            `Total Rows: ${data.length}`
+        ];
+
+        // Calculate how many rows fit per page
+        // First page has title + options, other pages don't
+        const titleBlockHeight = titleLineHeight + sectionSpacing + (optionsLines.length * (optionsLineHeight + lineSpacing) - lineSpacing);
+        const firstPageHeaderYStart = margin + titleBlockHeight + sectionSpacing;
+        const firstPageTableYStart = firstPageHeaderYStart + headerLineHeight + 2;
+        const firstPageAvailableHeight = pageHeight - margin - firstPageTableYStart;
+        const dataRowHeight = cellLineHeight + lineSpacing;
+        const firstPageRowsPerPage = Math.floor(firstPageAvailableHeight / dataRowHeight);
+
+        // Subsequent pages only have margin at top and page number
+        const otherPageHeaderYStart = margin + pageNumFontSize * 0.3528 + sectionSpacing;
+        const otherPageTableYStart = otherPageHeaderYStart + headerLineHeight + 2;
+        const otherPageAvailableHeight = pageHeight - margin - otherPageTableYStart;
+        const otherPageRowsPerPage = Math.floor(otherPageAvailableHeight / dataRowHeight);
+
+        // Calculate total pages
+        let totalPages = 1;
+        let remainingRows = data.length - firstPageRowsPerPage;
+        if (remainingRows > 0) {
+            totalPages += Math.ceil(remainingRows / otherPageRowsPerPage);
+        }
+
+        /**
+         * Draw page number only
+         * @param {number} pageNum - Current page number (1-indexed)
+         */
+        function drawPageNumber(pageNum) {
+            // Page number at top right
+            doc.setFontSize(pageNumFontSize);
+            doc.setFont('times', 'normal');
+            const pageNumText = `${pageNum} / ${totalPages}`;
+            const pageNumWidth = doc.getTextWidth(pageNumText);
+            doc.text(pageNumText, pageWidth - margin - pageNumWidth, margin);
+        }
+
+        /**
+         * Draw title and options (first page only)
+         */
+        function drawTitleAndOptions() {
+            // Page number at top right
+            drawPageNumber(1);
+
+            // Title
+            doc.setFontSize(titleFontSize);
+            doc.setFont('times', 'bold');
+            doc.text(options.title, margin, margin);
+
+            // Options (one per line)
+            doc.setFontSize(optionsFontSize);
+            doc.setFont('times', 'normal');
+            let yPos = margin + titleLineHeight + sectionSpacing;
+            optionsLines.forEach(line => {
+                doc.text(line, margin, yPos);
+                yPos += optionsLineHeight + lineSpacing;
+            });
+        }
+
+        /**
+         * Draw table header row
+         * @param {number} yPos - Y position to draw at
+         */
+        function drawTableHeader(yPos) {
+            doc.setFontSize(headerFontSize);
+            doc.setFont('times', 'bold');
+
+            let xPos = margin;
+            columns.forEach((col, i) => {
+                // Truncate header text if too wide
+                let headerText = col.label;
+                while (doc.getTextWidth(headerText) > colWidths[i] - 1 && headerText.length > 3) {
+                    headerText = headerText.slice(0, -4) + '...';
+                }
+                const headerRightX = xPos + colWidths[i] - 0.5;
+                doc.text(headerText, headerRightX, yPos, { align: 'right' });
+                xPos += colWidths[i];
+            });
+
+            // Draw line under header
+            doc.setLineWidth(0.2);
+            doc.line(margin, yPos + 1, pageWidth - margin, yPos + 1);
+        }
+
+        /**
+         * Draw a data row
+         * @param {Object} row - Data row object
+         * @param {number} yPos - Y position to draw at
+         */
+        function drawDataRow(row, yPos) {
+            doc.setFontSize(cellFontSize);
+            doc.setFont('times', 'normal');
+
+            let xPos = margin;
+            columns.forEach((col, i) => {
+                const val = row[col.key];
+                const formatted = col.formatter ? col.formatter(val) : String(val);
+                const cellRightX = xPos + colWidths[i] - 0.5;
+                doc.text(String(formatted), cellRightX, yPos, { align: 'right' });
+                xPos += colWidths[i];
+            });
+        }
+
+        // Generate pages
+        let currentRow = 0;
+
+        for (let page = 0; page < totalPages; page++) {
+            if (page > 0) {
+                doc.addPage();
+            }
+
+            let headerYStart, tableYStart, rowsThisPage;
+
+            if (page === 0) {
+                // First page: draw title and options
+                drawTitleAndOptions();
+                headerYStart = firstPageHeaderYStart;
+                tableYStart = firstPageTableYStart;
+                rowsThisPage = firstPageRowsPerPage;
+            } else {
+                // Other pages: only page number
+                drawPageNumber(page + 1);
+                headerYStart = otherPageHeaderYStart;
+                tableYStart = otherPageTableYStart;
+                rowsThisPage = otherPageRowsPerPage;
+            }
+
+            // Draw table header
+            drawTableHeader(headerYStart + headerLineHeight);
+
+            // Draw data rows for this page
+            const endRow = Math.min(currentRow + rowsThisPage, data.length);
+
+            for (let i = currentRow; i < endRow; i++) {
+                const rowIndex = i - currentRow;
+                const yPos = tableYStart + (rowIndex + 1) * dataRowHeight;
+                drawDataRow(data[i], yPos);
+            }
+
+            currentRow = endRow;
+        }
+
+        // Save the PDF
+        doc.save(filename);
+    }
+
+    /**
      * Calculate angle (in degrees) at `vertex` between vectors (vertex - pointA) and (pointB - vertex).
      * Returns 0 if either vector has (near) zero length to avoid NaN.
      * @param {Point} vertex - Point where angle is measured
@@ -478,6 +680,17 @@
         downloadCsvButtonGroup.appendChild(downloadButton);
         controls.appendChild(downloadCsvButtonGroup);
 
+        // Download PDF button
+        const downloadPdfButtonGroup = document.createElement('div');
+        downloadPdfButtonGroup.className = 'control-group';
+        downloadPdfButtonGroup.style.justifyContent = 'flex-end';
+        const downloadPdfButton = document.createElement('button');
+        downloadPdfButton.id = 'liftarm-download-pdf';
+        downloadPdfButton.className = 'btn btn-secondary';
+        downloadPdfButton.textContent = 'Download PDF';
+        downloadPdfButtonGroup.appendChild(downloadPdfButton);
+        controls.appendChild(downloadPdfButtonGroup);
+
         // Preset dropdown control (disabled/commented out)
         // const presetGroup = document.createElement('div');
         // presetGroup.className = 'control-group';
@@ -505,23 +718,41 @@
             const half = document.getElementById('liftarm-half-studs')?.checked;
             return formatNumber(v, half ? 1 : 0);
         };
+        // const columns = [
+        //     { key: 'sx', label: 'Stud.x', type: 'number', formatter: format3Dec },
+        //     { key: 'sy', label: 'Stud.y', type: 'number', formatter: format3Dec },
+        //     { key: 'sNum', label: 'Stud # (in A)', type: 'number', formatter: formatStuds },
+        //     { key: 'aLen', label: 'A Length', type: 'number', formatter: formatStuds },
+        //     { key: 'bLen', label: 'B Length', type: 'number', formatter: formatStuds },
+        //     { key: 'cLen', label: 'C Length', type: 'number', formatter: format3Dec },
+        //     { key: 'tx', label: 'Target.x', type: 'number', formatter: format3Dec },
+        //     { key: 'ty', label: 'Target.y', type: 'number', formatter: format3Dec },
+        //     { key: 'ix', label: 'Intersection.x', type: 'number', formatter: format3Dec },
+        //     { key: 'iy', label: 'Intersection.y', type: 'number', formatter: format3Dec },
+        //     { key: 'angleA', label: '∠A° (to x-axis)', type: 'number', formatter: format3Dec },
+        //     { key: 'angleB', label: '∠B° (to x-axis)', type: 'number', formatter: format3Dec },
+        //     { key: 'angleC', label: '∠C° (to x-axis)', type: 'number', formatter: format3Dec },
+        //     { key: 'angleAB', label: '∠AB° (at I)', type: 'number', formatter: format3Dec },
+        //     { key: 'angleAC', label: '∠AC° (at 0)', type: 'number', formatter: format3Dec },
+        //     { key: 'angleBC', label: '∠BC° (at T)', type: 'number', formatter: format3Dec }
+        // ];
         const columns = [
-            { key: 'sx', label: 'Stud.x', type: 'number', formatter: format3Dec },
-            { key: 'sy', label: 'Stud.y', type: 'number', formatter: format3Dec },
-            { key: 'sNum', label: 'Stud # (in A)', type: 'number', formatter: formatStuds },
-            { key: 'aLen', label: 'A Length', type: 'number', formatter: formatStuds },
-            { key: 'bLen', label: 'B Length', type: 'number', formatter: formatStuds },
-            { key: 'cLen', label: 'C Length', type: 'number', formatter: format3Dec },
-            { key: 'tx', label: 'Target.x', type: 'number', formatter: format3Dec },
-            { key: 'ty', label: 'Target.y', type: 'number', formatter: format3Dec },
-            { key: 'ix', label: 'Intersection.x', type: 'number', formatter: format3Dec },
-            { key: 'iy', label: 'Intersection.y', type: 'number', formatter: format3Dec },
-            { key: 'angleA', label: '∠A° (to x-axis)', type: 'number', formatter: format3Dec },
-            { key: 'angleB', label: '∠B° (to x-axis)', type: 'number', formatter: format3Dec },
-            { key: 'angleC', label: '∠C° (to x-axis)', type: 'number', formatter: format3Dec },
-            { key: 'angleAB', label: '∠AB° (at I)', type: 'number', formatter: format3Dec },
-            { key: 'angleAC', label: '∠AC° (at 0)', type: 'number', formatter: format3Dec },
-            { key: 'angleBC', label: '∠BC° (at T)', type: 'number', formatter: format3Dec }
+            { key: 'sx', label: 'S.x', type: 'number', formatter: format3Dec },
+            { key: 'sy', label: 'S.y', type: 'number', formatter: format3Dec },
+            { key: 'sNum', label: 'S #', type: 'number', formatter: formatStuds },
+            { key: 'aLen', label: 'A.L', type: 'number', formatter: formatStuds },
+            { key: 'bLen', label: 'B.L', type: 'number', formatter: formatStuds },
+            { key: 'cLen', label: 'C.L', type: 'number', formatter: format3Dec },
+            { key: 'tx', label: 'T.x', type: 'number', formatter: format3Dec },
+            { key: 'ty', label: 'T.y', type: 'number', formatter: format3Dec },
+            { key: 'ix', label: 'I.x', type: 'number', formatter: format3Dec },
+            { key: 'iy', label: 'I.y', type: 'number', formatter: format3Dec },
+            { key: 'angleA', label: 'A-Ox', type: 'number', formatter: format3Dec },
+            { key: 'angleB', label: 'B-Ox', type: 'number', formatter: format3Dec },
+            { key: 'angleC', label: 'C-Ox', type: 'number', formatter: format3Dec },
+            { key: 'angleAB', label: 'A-B', type: 'number', formatter: format3Dec },
+            { key: 'angleAC', label: 'A-C', type: 'number', formatter: format3Dec },
+            { key: 'angleBC', label: 'B-C', type: 'number', formatter: format3Dec }
         ];
 
         // Create DataTable instance
@@ -629,6 +860,33 @@
             }
             const csv = arrayToCSV(allResults, columns);
             downloadCSV(csv, 'liftarms.csv');
+        });
+
+        // Download PDF button click handler
+        downloadPdfButton.addEventListener('click', () => {
+            if (allResults.length === 0) {
+                alert('No data to download. Please calculate first.');
+                return;
+            }
+
+            // Gather current options for the PDF header
+            const pdfOptions = {
+                title: 'Two Liftarm Dimensions Calculator',
+                minA: document.getElementById('liftarm-min-a').value,
+                maxA: document.getElementById('liftarm-max-a').value,
+                minB: document.getElementById('liftarm-min-b').value,
+                maxB: document.getElementById('liftarm-max-b').value,
+                halfStuds: document.getElementById('liftarm-half-studs').checked,
+                minDecimal: document.getElementById('liftarm-min-decimal').value,
+                maxDecimal: document.getElementById('liftarm-max-decimal').value,
+                includeComplementaryDecimal: document.getElementById('liftarm-include-complementary-decimal').checked,
+                removeLarger: document.getElementById('liftarm-remove-larger').checked,
+                removeYGreaterX: document.getElementById('liftarm-remove-y-greater-x').checked
+            };
+
+            // Use filtered data from the table if filters are applied
+            const dataToExport = dataTable.filteredData.length > 0 ? dataTable.filteredData : allResults;
+            downloadPDF(dataToExport, columns, pdfOptions, 'liftarms.pdf');
         });
 
         // Preset dropdown change handler disabled while presets are commented out
