@@ -171,6 +171,7 @@
 
             for (let ty = -maxReach; ty <= maxReach; ty += step) {
                 const T = new Point(tx, ty);
+                const cLen = origin.distanceTo(T);
                 let foundAny = false;
 
                 for (let aLen = minA; aLen <= maxA; aLen += step) {
@@ -238,8 +239,7 @@
                                         sNum: sNum,
                                         aLen: aLen,
                                         bLen: bLen,
-                                        // C is defined from origin to T
-                                        cLen: parseFloat(formatNumber(origin.distanceTo(T), 3)),
+                                        cLen: cLen,
                                         tx: parseFloat(formatNumber(T.x, 3)),
                                         ty: parseFloat(formatNumber(T.y, 3)),
                                         ix: parseFloat(formatNumber(I.x, 3)),
