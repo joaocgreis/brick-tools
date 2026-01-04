@@ -328,19 +328,19 @@
         calcButtonGroup.appendChild(calcButton);
         controls.appendChild(calcButtonGroup);
 
-        // Preset dropdown control
-        const presetGroup = document.createElement('div');
-        presetGroup.className = 'control-group';
-        presetGroup.innerHTML = `
-            <label for="liftarm-preset">Filter Preset</label>
-            <select id="liftarm-preset">
-                <option value="0">All Results</option>
-                <option value="1">Hypotenuses</option>
-                <option value="2">Catheti</option>
-                <option value="3">90 Degrees</option>
-            </select>
-        `;
-        controls.appendChild(presetGroup);
+        // Preset dropdown control (disabled/commented out)
+        // const presetGroup = document.createElement('div');
+        // presetGroup.className = 'control-group';
+        // presetGroup.innerHTML = `
+        //     <label for="liftarm-preset">Filter Preset</label>
+        //     <select id="liftarm-preset">
+        //         <option value="0">All Results</option>
+        //         <option value="1">Hypotenuses</option>
+        //         <option value="2">Catheti</option>
+        //         <option value="3">90 Degrees</option>
+        //     </select>
+        // `;
+        // controls.appendChild(presetGroup);
 
         container.appendChild(controls);
 
@@ -374,24 +374,26 @@
 
         // Store all results and presets for filtering
         let allResults = [];
-        const presets = createPresets();
+        // Presets creation disabled for now. Use createPresets() if re-enabling filter presets.
+        // const presets = createPresets();
 
         /**
          * Apply preset filter to data
          * @param {number} presetIndex - Index of the preset to apply
          */
-        function applyPreset(presetIndex) {
-            const preset = presets[presetIndex];
-            if (!preset) return;
-
-            if (preset.filterFn) {
-                const filteredData = allResults.filter(preset.filterFn);
-                dataTable.setData(filteredData);
-            } else {
-                dataTable.setData(allResults);
-            }
-            dataTable.render();
-        }
+        // applyPreset disabled while presets are commented out
+        // function applyPreset(presetIndex) {
+        //     const preset = presets[presetIndex];
+        //     if (!preset) return;
+        //
+        //     if (preset.filterFn) {
+        //         const filteredData = allResults.filter(preset.filterFn);
+        //         dataTable.setData(filteredData);
+        //     } else {
+        //         dataTable.setData(allResults);
+        //     }
+        //     dataTable.render();
+        // }
 
         // Calculate button click handler
         calcButton.addEventListener('click', () => {
@@ -410,19 +412,19 @@
             // Calculate positions
             allResults = calculatePositions(clampedMaxA, clampedMaxB, halfStuds);
 
-            // Reset preset to "All Results"
-            document.getElementById('liftarm-preset').value = '0';
+            // Preset UI disabled: skip resetting preset dropdown
+            // document.getElementById('liftarm-preset').value = '0';
 
             // Update table
             dataTable.setData(allResults);
             dataTable.render();
         });
 
-        // Preset dropdown change handler
-        document.getElementById('liftarm-preset').addEventListener('change', (e) => {
-            const presetIndex = parseInt(e.target.value);
-            applyPreset(presetIndex);
-        });
+        // Preset dropdown change handler disabled while presets are commented out
+        // document.getElementById('liftarm-preset').addEventListener('change', (e) => {
+        //     const presetIndex = parseInt(e.target.value);
+        //     applyPreset(presetIndex);
+        // });
 
         // Initial render with empty data
         dataTable.setData([]);
