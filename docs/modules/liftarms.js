@@ -368,23 +368,28 @@
         container.appendChild(tableContainer);
 
         // Define table columns
+        const format3Dec = (v) => formatNumber(v, 3);
+        const formatStuds = (v) => {
+            const half = document.getElementById('liftarm-half-studs')?.checked;
+            return formatNumber(v, half ? 1 : 0);
+        };
         const columns = [
-            { key: 'sx', label: 'Stud.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'sy', label: 'Stud.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'sNum', label: 'Stud # (in A)', type: 'number' },
-            { key: 'aLen', label: 'A Length', type: 'number' },
-            { key: 'bLen', label: 'B Length', type: 'number' },
-            { key: 'cLen', label: 'C Length', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'tx', label: 'Target.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'ty', label: 'Target.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'ix', label: 'Intersection.x', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'iy', label: 'Intersection.y', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'angleA', label: '∠A° (to x-axis)', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'angleB', label: '∠B° (to x-axis)', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'angleC', label: '∠C° (to x-axis)', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'angleAB', label: '∠AB° (at I)', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'angleAC', label: '∠AC° (at 0)', type: 'number', formatter: (v) => formatNumber(v, 3) },
-            { key: 'angleBC', label: '∠BC° (at T)', type: 'number', formatter: (v) => formatNumber(v, 3) }
+            { key: 'sx', label: 'Stud.x', type: 'number', formatter: format3Dec },
+            { key: 'sy', label: 'Stud.y', type: 'number', formatter: format3Dec },
+            { key: 'sNum', label: 'Stud # (in A)', type: 'number', formatter: formatStuds },
+            { key: 'aLen', label: 'A Length', type: 'number', formatter: formatStuds },
+            { key: 'bLen', label: 'B Length', type: 'number', formatter: formatStuds },
+            { key: 'cLen', label: 'C Length', type: 'number', formatter: format3Dec },
+            { key: 'tx', label: 'Target.x', type: 'number', formatter: format3Dec },
+            { key: 'ty', label: 'Target.y', type: 'number', formatter: format3Dec },
+            { key: 'ix', label: 'Intersection.x', type: 'number', formatter: format3Dec },
+            { key: 'iy', label: 'Intersection.y', type: 'number', formatter: format3Dec },
+            { key: 'angleA', label: '∠A° (to x-axis)', type: 'number', formatter: format3Dec },
+            { key: 'angleB', label: '∠B° (to x-axis)', type: 'number', formatter: format3Dec },
+            { key: 'angleC', label: '∠C° (to x-axis)', type: 'number', formatter: format3Dec },
+            { key: 'angleAB', label: '∠AB° (at I)', type: 'number', formatter: format3Dec },
+            { key: 'angleAC', label: '∠AC° (at 0)', type: 'number', formatter: format3Dec },
+            { key: 'angleBC', label: '∠BC° (at T)', type: 'number', formatter: format3Dec }
         ];
 
         // Create DataTable instance
