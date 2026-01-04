@@ -116,12 +116,16 @@
 
     /**
      * Calculate all liftarm positions
-     * @param {number} maxA - Maximum length of liftarm A
-     * @param {number} maxB - Maximum length of liftarm B
      * @param {boolean} halfStuds - Whether to include half stud positions
+     * @param {number} minA - Minimum length of liftarm A
+     * @param {number} maxA - Maximum length of liftarm A
+     * @param {number} minB - Minimum length of liftarm B
+     * @param {number} maxB - Maximum length of liftarm B
+     * @param {number} minDecimal - Minimum decimal part for sx and sy
+     * @param {number} maxDecimal - Maximum decimal part for sx and sy
      * @returns {Object[]} Array of result objects
      */
-    function calculatePositions(maxA, maxB, halfStuds, minA, minB) {
+    function calculatePositions(halfStuds, minA, maxA, minB, maxB, minDecimal, maxDecimal) {
         const results = [];
         const seen = new Set();
         const origin = new Point(0, 0);
@@ -167,6 +171,14 @@
                                     //     continue;
                                     // }
                                     // seen.add(key);
+
+                                    // Filter by decimal part of sx and sy
+                                    const sxDecimal = S.x % 1;
+                                    const syDecimal = S.y % 1;
+                                    if ((sxDecimal < minDecimal || sxDecimal > maxDecimal) &&
+                                        (syDecimal < minDecimal || syDecimal > maxDecimal)) {
+                                        continue;
+                                    }
 
                                     // Calculate angles
                                     const angleA = Math.atan2(I.y, I.x) * 180 / Math.PI;
@@ -335,6 +347,24 @@
         `;
         controls.appendChild(halfStudsGroup);
 
+        // Min Decimal control
+        const minDecimalGroup = document.createElement('div');
+        minDecimalGroup.className = 'control-group';
+        minDecimalGroup.innerHTML = `
+            <label for="liftarm-min-decimal">Min Decimal</label>
+            <input type="number" id="liftarm-min-decimal" value="0.000" min="0.000" max="1.000" step="0.001">
+        `;
+        controls.appendChild(minDecimalGroup);
+
+        // Max Decimal control
+        const maxDecimalGroup = document.createElement('div');
+        maxDecimalGroup.className = 'control-group';
+        maxDecimalGroup.innerHTML = `
+            <label for="liftarm-max-decimal">Max Decimal</label>
+            <input type="number" id="liftarm-max-decimal" value="1.000" min="0.000" max="1.000" step="0.001">
+        `;
+        controls.appendChild(maxDecimalGroup);
+
         // Calculate button
         const calcButtonGroup = document.createElement('div');
         calcButtonGroup.className = 'control-group';
@@ -424,6 +454,8 @@
             const rawMinB = parseFloat(document.getElementById('liftarm-min-b').value);
             const rawMaxA = parseFloat(document.getElementById('liftarm-max-a').value);
             const rawMaxB = parseFloat(document.getElementById('liftarm-max-b').value);
+            const rawMinDecimal = parseFloat(document.getElementById('liftarm-min-decimal').value);
+            const rawMaxDecimal = parseFloat(document.getElementById('liftarm-max-decimal').value);
 
             // Step used in calculations (preserve .5 when half studs enabled)
             const halfStuds = document.getElementById('liftarm-half-studs').checked;
@@ -434,6 +466,8 @@
             const safeMinB = isNaN(rawMinB) ? 0 : rawMinB;
             const safeMaxA = isNaN(rawMaxA) ? 4 : rawMaxA;
             const safeMaxB = isNaN(rawMaxB) ? 4 : rawMaxB;
+            const safeMinDecimal = isNaN(rawMinDecimal) ? 0 : rawMinDecimal;
+            const safeMaxDecimal = isNaN(rawMaxDecimal) ? 1 : rawMaxDecimal;
 
             // Snap functions: max values snap down, min values snap up to nearest step
             const snapDown = (v) => Math.floor(v / step) * step;
@@ -442,17 +476,24 @@
             const snapUp = (v) => Math.ceil(v / step) * step;
             const clampedMinA = Math.max(1, Math.min(15, snapUp(safeMinA)));
             const clampedMinB = Math.max(0, Math.min(15, snapUp(safeMinB)));
+            const clampedMinDecimal = Math.max(0, Math.min(1, safeMinDecimal));
+            const clampedMaxDecimal = Math.max(0, Math.min(1, safeMaxDecimal));
 
             // Ensure min <= max; if not, make min not greater than max
             let finalMinA = clampedMinA;
             let finalMinB = clampedMinB;
             let finalMaxA = clampedMaxA;
             let finalMaxB = clampedMaxB;
+            let finalMinDecimal = clampedMinDecimal;
+            let finalMaxDecimal = clampedMaxDecimal;
             if (finalMinA > finalMaxA) {
                 finalMinA = finalMaxA;
             }
             if (finalMinB > finalMaxB) {
                 finalMinB = finalMaxB;
+            }
+            if (finalMinDecimal > finalMaxDecimal) {
+                finalMinDecimal = finalMaxDecimal;
             }
 
             // Write back with appropriate decimals (0 or 1)
@@ -461,9 +502,11 @@
             document.getElementById('liftarm-min-b').value = formatNumber(finalMinB, decimals);
             document.getElementById('liftarm-max-a').value = formatNumber(finalMaxA, decimals);
             document.getElementById('liftarm-max-b').value = formatNumber(finalMaxB, decimals);
+            document.getElementById('liftarm-min-decimal').value = formatNumber(finalMinDecimal, 3);
+            document.getElementById('liftarm-max-decimal').value = formatNumber(finalMaxDecimal, 3);
 
             // Calculate positions using min/max bounds
-            allResults = calculatePositions(finalMaxA, finalMaxB, halfStuds, finalMinA, finalMinB);
+            allResults = calculatePositions(halfStuds, finalMinA, finalMaxA, finalMinB, finalMaxB, finalMinDecimal, finalMaxDecimal);
 
             // Preset UI disabled: skip resetting preset dropdown
             // document.getElementById('liftarm-preset').value = '0';
