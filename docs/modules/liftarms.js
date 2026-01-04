@@ -7,6 +7,8 @@
 (function () {
     'use strict';
 
+    const { eq, neq, gt, gte, lt, lte } = window.FloatUtils;
+
     /**
      * Point class for geometric calculations
      */
@@ -133,7 +135,7 @@
         const norm2 = Math.sqrt(v2x * v2x + v2y * v2y);
 
         // Avoid division by zero / invalid acos
-        if (norm1 < 1e-12 || norm2 < 1e-12) {
+        if (eq(norm1, 0) || eq(norm2, 0)) {
             return 0;
         }
 
@@ -184,30 +186,29 @@
 
                             for (const I of intersections) {
                                 // // Only consider I points in first quadrant
-                                if (I.x < 0 || I.y < 0) {
+                                if (lt(I.x, 0) || lt(I.y, 0)) {
                                     continue;
                                 }
                                 // Filter out positions where y > x if option is enabled
-                                if (removeYGreaterX && I.y > I.x) {
+                                if (removeYGreaterX && gt(I.y, I.x)) {
                                     continue;
                                 }
 
                                 // For each stud position S on liftarm A (1 to aLen)
                                 for (let sNum = step; sNum <= aLen; sNum += step) {
                                     // S is at distance sNum from origin along line to I
-                                    const ratio = sNum / aLen;
-                                    const S = new Point(I.x * ratio, I.y * ratio);
+                                    const S = new Point(I.x * sNum / aLen, I.y * sNum / aLen);
 
                                     // Filter by decimal part of sx and sy
                                     const sxDecimal = S.x % 1;
                                     const syDecimal = S.y % 1;
-                                    if ((sxDecimal < minDecimal || sxDecimal > maxDecimal) &&
-                                        (syDecimal < minDecimal || syDecimal > maxDecimal)) {
+                                    if ((lt(sxDecimal, minDecimal) || gt(sxDecimal, maxDecimal)) &&
+                                        (lt(syDecimal, minDecimal) || gt(syDecimal, maxDecimal))) {
                                         if (!includeComplementaryDecimal) {
                                             continue;
                                         }
-                                        if ((sxDecimal < (1 - maxDecimal) || sxDecimal > (1 - minDecimal)) &&
-                                            (syDecimal < (1 - maxDecimal) || syDecimal > (1 - minDecimal))) {
+                                        if ((lt(sxDecimal, 1 - maxDecimal) || gt(sxDecimal, 1 - minDecimal)) &&
+                                            (lt(syDecimal, 1 - maxDecimal) || gt(syDecimal, 1 - minDecimal))) {
                                             continue;
                                         }
                                     }
@@ -293,8 +294,6 @@
      * @returns {Object[]} Array of preset objects
      */
     function createPresets() {
-        const tolerance = 0.001;
-
         return [
             {
                 name: 'All Results',
@@ -304,23 +303,23 @@
                 name: 'Hypotenuses',
                 // Iy = 0 AND Tx = Ix (liftarm A horizontal, liftarm B vertical)
                 filterFn: (row) => {
-                    return Math.abs(row.iy) < tolerance &&
-                        Math.abs(row.tx - row.ix) < tolerance;
+                    return eq(row.iy, 0) &&
+                        eq(row.tx, row.ix);
                 }
             },
             {
                 name: 'Catheti',
                 // Ix = Tx AND Ty = 0 (liftarm B vertical from T on x-axis)
                 filterFn: (row) => {
-                    return Math.abs(row.ix - row.tx) < tolerance &&
-                        Math.abs(row.ty) < tolerance;
+                    return eq(row.ix, row.tx) &&
+                        eq(row.ty, 0);
                 }
             },
             {
                 name: '90 Degrees',
                 // minAngle = 90 (perpendicular liftarms)
                 filterFn: (row) => {
-                    return Math.abs(row.minAngle - 90) < tolerance;
+                    return eq(row.minAngle, 90);
                 }
             }
         ];
