@@ -121,7 +121,7 @@
      * @param {boolean} halfStuds - Whether to include half stud positions
      * @returns {Object[]} Array of result objects
      */
-    function calculatePositions(maxA, maxB, halfStuds) {
+    function calculatePositions(maxA, maxB, halfStuds, minA, minB) {
         const results = [];
         const seen = new Set();
         const origin = new Point(0, 0);
@@ -137,8 +137,8 @@
                 const T = new Point(tx, ty);
                 let foundAny = false;
 
-                for (let aLen = 1; aLen <= maxA; aLen += step) {
-                    for (let bLen = 0; bLen <= maxB; bLen += step) {
+                for (let aLen = minA; aLen <= maxA; aLen += step) {
+                    for (let bLen = minB; bLen <= maxB; bLen += step) {
                         const intersections = origin.circleIntersections(aLen, T, bLen);
 
                         if (intersections.length > 0) {
@@ -288,21 +288,39 @@
         const controls = document.createElement('div');
         controls.className = 'controls-section';
 
+        // Min Liftarm A Length control
+        const minAGroup = document.createElement('div');
+        minAGroup.className = 'control-group';
+        minAGroup.innerHTML = `
+            <label for="liftarm-min-a">Min Liftarm A Length</label>
+            <input type="number" id="liftarm-min-a" value="1" min="1" max="15" step="1">
+        `;
+        controls.appendChild(minAGroup);
+
         // Max Liftarm A Length control
         const maxAGroup = document.createElement('div');
         maxAGroup.className = 'control-group';
         maxAGroup.innerHTML = `
             <label for="liftarm-max-a">Max Liftarm A Length</label>
-            <input type="number" id="liftarm-max-a" value="5" min="1" max="15" step="1">
+            <input type="number" id="liftarm-max-a" value="4" min="1" max="15" step="1">
         `;
         controls.appendChild(maxAGroup);
+
+        // Min Liftarm B Length control
+        const minBGroup = document.createElement('div');
+        minBGroup.className = 'control-group';
+        minBGroup.innerHTML = `
+            <label for="liftarm-min-b">Min Liftarm B Length</label>
+            <input type="number" id="liftarm-min-b" value="0" min="0" max="15" step="1">
+        `;
+        controls.appendChild(minBGroup);
 
         // Max Liftarm B Length control
         const maxBGroup = document.createElement('div');
         maxBGroup.className = 'control-group';
         maxBGroup.innerHTML = `
             <label for="liftarm-max-b">Max Liftarm B Length</label>
-            <input type="number" id="liftarm-max-b" value="5" min="1" max="15" step="1">
+            <input type="number" id="liftarm-max-b" value="4" min="0" max="15" step="1">
         `;
         controls.appendChild(maxBGroup);
 
@@ -397,20 +415,50 @@
 
         // Calculate button click handler
         calcButton.addEventListener('click', () => {
-            const maxA = parseInt(document.getElementById('liftarm-max-a').value) || 5;
-            const maxB = parseInt(document.getElementById('liftarm-max-b').value) || 5;
+            const rawMinA = parseFloat(document.getElementById('liftarm-min-a').value);
+            const rawMinB = parseFloat(document.getElementById('liftarm-min-b').value);
+            const rawMaxA = parseFloat(document.getElementById('liftarm-max-a').value);
+            const rawMaxB = parseFloat(document.getElementById('liftarm-max-b').value);
+
+            // Step used in calculations (preserve .5 when half studs enabled)
             const halfStuds = document.getElementById('liftarm-half-studs').checked;
+            const step = halfStuds ? 0.5 : 1;
 
-            // Clamp values
-            const clampedMaxA = Math.max(1, Math.min(15, maxA));
-            const clampedMaxB = Math.max(1, Math.min(15, maxB));
+            // Fallback to defaults if input is empty/invalid
+            const safeMinA = isNaN(rawMinA) ? 1 : rawMinA;
+            const safeMinB = isNaN(rawMinB) ? 0 : rawMinB;
+            const safeMaxA = isNaN(rawMaxA) ? 4 : rawMaxA;
+            const safeMaxB = isNaN(rawMaxB) ? 4 : rawMaxB;
 
-            // Update inputs if clamped
-            document.getElementById('liftarm-max-a').value = clampedMaxA;
-            document.getElementById('liftarm-max-b').value = clampedMaxB;
+            // Snap functions: max values snap down, min values snap up to nearest step
+            const snapDown = (v) => Math.floor(v / step) * step;
+            const clampedMaxA = Math.max(1, Math.min(15, snapDown(safeMaxA)));
+            const clampedMaxB = Math.max(0, Math.min(15, snapDown(safeMaxB)));
+            const snapUp = (v) => Math.ceil(v / step) * step;
+            const clampedMinA = Math.max(1, Math.min(15, snapUp(safeMinA)));
+            const clampedMinB = Math.max(0, Math.min(15, snapUp(safeMinB)));
 
-            // Calculate positions
-            allResults = calculatePositions(clampedMaxA, clampedMaxB, halfStuds);
+            // Ensure min <= max; if not, make min not greater than max
+            let finalMinA = clampedMinA;
+            let finalMinB = clampedMinB;
+            let finalMaxA = clampedMaxA;
+            let finalMaxB = clampedMaxB;
+            if (finalMinA > finalMaxA) {
+                finalMinA = finalMaxA;
+            }
+            if (finalMinB > finalMaxB) {
+                finalMinB = finalMaxB;
+            }
+
+            // Write back with appropriate decimals (0 or 1)
+            const decimals = (step % 1 === 0) ? 0 : 1;
+            document.getElementById('liftarm-min-a').value = formatNumber(finalMinA, decimals);
+            document.getElementById('liftarm-min-b').value = formatNumber(finalMinB, decimals);
+            document.getElementById('liftarm-max-a').value = formatNumber(finalMaxA, decimals);
+            document.getElementById('liftarm-max-b').value = formatNumber(finalMaxB, decimals);
+
+            // Calculate positions using min/max bounds
+            allResults = calculatePositions(finalMaxA, finalMaxB, halfStuds, finalMinA, finalMinB);
 
             // Preset UI disabled: skip resetting preset dropdown
             // document.getElementById('liftarm-preset').value = '0';
