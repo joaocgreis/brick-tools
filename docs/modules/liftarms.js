@@ -113,9 +113,10 @@
      * @param {number} maxB - Maximum length of liftarm B
      * @param {number} minDecimal - Minimum decimal part for sx and sy
      * @param {number} maxDecimal - Maximum decimal part for sx and sy
+     * @param {boolean} includeComplementaryDecimal - Whether to also include positions where the decimal parts fall in the complementary range [1-maxDecimal, 1-minDecimal]
      * @returns {Object[]} Array of result objects
      */
-    function calculatePositions(halfStuds, removeLarger, removeYGreaterX, minA, maxA, minB, maxB, minDecimal, maxDecimal) {
+    function calculatePositions(halfStuds, removeLarger, removeYGreaterX, minA, maxA, minB, maxB, minDecimal, maxDecimal, includeComplementaryDecimal) {
         const results = [];
         const minLenSum = new Map();
         const origin = new Point(0, 0);
@@ -160,7 +161,13 @@
                                     const syDecimal = S.y % 1;
                                     if ((sxDecimal < minDecimal || sxDecimal > maxDecimal) &&
                                         (syDecimal < minDecimal || syDecimal > maxDecimal)) {
-                                        continue;
+                                        if (!includeComplementaryDecimal) {
+                                            continue;
+                                        }
+                                        if ((sxDecimal < (1 - maxDecimal) || sxDecimal > (1 - minDecimal)) &&
+                                            (syDecimal < (1 - maxDecimal) || syDecimal > (1 - minDecimal))) {
+                                            continue;
+                                        }
                                     }
 
                                     // Filter out larger liftarms if option is enabled
@@ -370,6 +377,17 @@
         `;
         controls.appendChild(maxDecimalGroup);
 
+        // Include Complementary Decimal control
+        const complementaryDecimalGroup = document.createElement('div');
+        complementaryDecimalGroup.className = 'control-group';
+        complementaryDecimalGroup.innerHTML = `
+            <label>
+                <input type="checkbox" id="liftarm-include-complementary-decimal">
+                Include Complementary Decimal
+            </label>
+        `;
+        controls.appendChild(complementaryDecimalGroup);
+
         // Remove Larger Liftarms control
         const removeLargerGroup = document.createElement('div');
         removeLargerGroup.className = 'control-group';
@@ -535,7 +553,8 @@
             // Calculate positions using min/max bounds
             const removeLarger = document.getElementById('liftarm-remove-larger').checked;
             const removeYGreaterX = document.getElementById('liftarm-remove-y-greater-x').checked;
-            allResults = calculatePositions(halfStuds, removeLarger, removeYGreaterX, finalMinA, finalMaxA, finalMinB, finalMaxB, finalMinDecimal, finalMaxDecimal);
+            const includeComplementaryDecimal = document.getElementById('liftarm-include-complementary-decimal').checked;
+            allResults = calculatePositions(halfStuds, removeLarger, removeYGreaterX, finalMinA, finalMaxA, finalMinB, finalMaxB, finalMinDecimal, finalMaxDecimal, includeComplementaryDecimal);
 
             // Preset UI disabled: skip resetting preset dropdown
             // document.getElementById('liftarm-preset').value = '0';
