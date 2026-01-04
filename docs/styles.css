@@ -129,6 +129,9 @@ header .description {
   padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
+  min-width: 6rem;
+  width: auto;
+  white-space: nowrap;
 }
 
 .data-table thead th {
@@ -209,7 +212,6 @@ header .description {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  min-width: max(120px, 8vw);
 }
 
 .filter-range .filter-input {
@@ -495,7 +497,6 @@ footer p {
 
   .filter-range {
     gap: 0.3rem;
-    min-width: 100px;
   }
 
   .controls-section {
