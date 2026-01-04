@@ -103,20 +103,9 @@
     }
 
     /**
-     * Create a unique key for deduplication
-     * @param {number} sx - S.x coordinate
-     * @param {number} sy - S.y coordinate
-     * @param {number} aLen - Liftarm A length
-     * @param {number} bLen - Liftarm B length
-     * @returns {string} Unique key
-     */
-    function createKey(sx, sy, aLen, bLen) {
-        return `${formatNumber(sx, 3)}_${formatNumber(sy, 3)}_${aLen}_${bLen}`;
-    }
-
-    /**
      * Calculate all liftarm positions
      * @param {boolean} halfStuds - Whether to include half stud positions
+     * @param {boolean} removeLarger - Whether to remove larger liftarm combinations
      * @param {number} minA - Minimum length of liftarm A
      * @param {number} maxA - Maximum length of liftarm A
      * @param {number} minB - Minimum length of liftarm B
@@ -125,9 +114,9 @@
      * @param {number} maxDecimal - Maximum decimal part for sx and sy
      * @returns {Object[]} Array of result objects
      */
-    function calculatePositions(halfStuds, minA, maxA, minB, maxB, minDecimal, maxDecimal) {
+    function calculatePositions(halfStuds, removeLarger, minA, maxA, minB, maxB, minDecimal, maxDecimal) {
         const results = [];
-        const seen = new Set();
+        const minLenSum = new Map();
         const origin = new Point(0, 0);
         const step = halfStuds ? 0.5 : 1;
 
@@ -165,19 +154,21 @@
                                     const ratio = sNum / aLen;
                                     const S = new Point(I.x * ratio, I.y * ratio);
 
-                                    // // Create key for deduplication
-                                    // const key = createKey(S.x, S.y, aLen, bLen);
-                                    // if (seen.has(key)) {
-                                    //     continue;
-                                    // }
-                                    // seen.add(key);
-
                                     // Filter by decimal part of sx and sy
                                     const sxDecimal = S.x % 1;
                                     const syDecimal = S.y % 1;
                                     if ((sxDecimal < minDecimal || sxDecimal > maxDecimal) &&
                                         (syDecimal < minDecimal || syDecimal > maxDecimal)) {
                                         continue;
+                                    }
+
+                                    // Filter out larger liftarms if option is enabled
+                                    const keyRemoveLarger = `${formatNumber(S.x, 3)}_${formatNumber(S.y, 3)}`;
+                                    if (removeLarger) {
+                                        const thisVal = aLen + bLen;
+                                        if (minLenSum.has(keyRemoveLarger) && (thisVal >= minLenSum.get(keyRemoveLarger) + 0.001))
+                                            continue;
+                                        minLenSum.set(keyRemoveLarger, thisVal);
                                     }
 
                                     // Calculate angles
@@ -209,7 +200,8 @@
                                         angleC: parseFloat(formatNumber(angleC, 1)),
                                         angleAB: parseFloat(formatNumber(angleAB, 1)),
                                         angleAC: parseFloat(formatNumber(angleAC, 1)),
-                                        angleBC: parseFloat(formatNumber(angleBC, 1))
+                                        angleBC: parseFloat(formatNumber(angleBC, 1)),
+                                        keyRemoveLarger
                                     });
                                 }
                             }
@@ -221,6 +213,18 @@
             // If no intersections found for any A,B combo at this Tx, stop
             if (!foundAnyForTx && tx > 0) {
                 break;
+            }
+        }
+
+        // Filter out larger liftarms if option is enabled
+        if (removeLarger) {
+            for (let i = 0; i < results.length;) {
+                const row = results[i];
+                const lenSum = row.aLen + row.bLen;
+                if (lenSum >= minLenSum.get(row.keyRemoveLarger) + 0.001)
+                    results.splice(i, 1);
+                else
+                    i++;
             }
         }
 
@@ -365,6 +369,17 @@
         `;
         controls.appendChild(maxDecimalGroup);
 
+        // Remove Larger Liftarms control
+        const removeLargerGroup = document.createElement('div');
+        removeLargerGroup.className = 'control-group';
+        removeLargerGroup.innerHTML = `
+            <label>
+                <input type="checkbox" id="liftarm-remove-larger" checked>
+                Remove Larger Liftarms
+            </label>
+        `;
+        controls.appendChild(removeLargerGroup);
+
         // Calculate button
         const calcButtonGroup = document.createElement('div');
         calcButtonGroup.className = 'control-group';
@@ -506,7 +521,8 @@
             document.getElementById('liftarm-max-decimal').value = formatNumber(finalMaxDecimal, 3);
 
             // Calculate positions using min/max bounds
-            allResults = calculatePositions(halfStuds, finalMinA, finalMaxA, finalMinB, finalMaxB, finalMinDecimal, finalMaxDecimal);
+            const removeLarger = document.getElementById('liftarm-remove-larger').checked;
+            allResults = calculatePositions(halfStuds, removeLarger, finalMinA, finalMaxA, finalMinB, finalMaxB, finalMinDecimal, finalMaxDecimal);
 
             // Preset UI disabled: skip resetting preset dropdown
             // document.getElementById('liftarm-preset').value = '0';
