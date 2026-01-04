@@ -71,6 +71,8 @@
      * @returns {string} Formatted number string
      */
     function formatNumber(value, decimals) {
+        // -0 should be formatted as 0
+        if (eq(value, 0)) value = 0;
         return value.toFixed(decimals);
     }
 
