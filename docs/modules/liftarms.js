@@ -106,6 +106,7 @@
      * Calculate all liftarm positions
      * @param {boolean} halfStuds - Whether to include half stud positions
      * @param {boolean} removeLarger - Whether to remove larger liftarm combinations
+     * @param {boolean} removeYGreaterX - Whether to remove positions where y > x
      * @param {number} minA - Minimum length of liftarm A
      * @param {number} maxA - Maximum length of liftarm A
      * @param {number} minB - Minimum length of liftarm B
@@ -114,7 +115,7 @@
      * @param {number} maxDecimal - Maximum decimal part for sx and sy
      * @returns {Object[]} Array of result objects
      */
-    function calculatePositions(halfStuds, removeLarger, minA, maxA, minB, maxB, minDecimal, maxDecimal) {
+    function calculatePositions(halfStuds, removeLarger, removeYGreaterX, minA, maxA, minB, maxB, minDecimal, maxDecimal) {
         const results = [];
         const minLenSum = new Map();
         const origin = new Point(0, 0);
@@ -139,12 +140,12 @@
                             foundAnyForTx = true;
 
                             for (const I of intersections) {
-                                // // Only consider I points in first quadrant with Iy <= Ix
-                                // // Using small tolerance for floating point comparison
-                                // if (I.x < -0.001 || I.y < -0.001 || I.y > I.x + 0.001) {
-                                //     continue;
-                                // }
+                                // // Only consider I points in first quadrant
                                 if (I.x < 0 || I.y < 0) {
+                                    continue;
+                                }
+                                // Filter out positions where y > x if option is enabled
+                                if (removeYGreaterX && I.y > I.x) {
                                     continue;
                                 }
 
@@ -380,6 +381,17 @@
         `;
         controls.appendChild(removeLargerGroup);
 
+        // Remove y > x control
+        const removeYGreaterXGroup = document.createElement('div');
+        removeYGreaterXGroup.className = 'control-group';
+        removeYGreaterXGroup.innerHTML = `
+            <label>
+                <input type="checkbox" id="liftarm-remove-y-greater-x" checked>
+                Remove y > x
+            </label>
+        `;
+        controls.appendChild(removeYGreaterXGroup);
+
         // Calculate button
         const calcButtonGroup = document.createElement('div');
         calcButtonGroup.className = 'control-group';
@@ -522,7 +534,8 @@
 
             // Calculate positions using min/max bounds
             const removeLarger = document.getElementById('liftarm-remove-larger').checked;
-            allResults = calculatePositions(halfStuds, removeLarger, finalMinA, finalMaxA, finalMinB, finalMaxB, finalMinDecimal, finalMaxDecimal);
+            const removeYGreaterX = document.getElementById('liftarm-remove-y-greater-x').checked;
+            allResults = calculatePositions(halfStuds, removeLarger, removeYGreaterX, finalMinA, finalMaxA, finalMinB, finalMaxB, finalMinDecimal, finalMaxDecimal);
 
             // Preset UI disabled: skip resetting preset dropdown
             // document.getElementById('liftarm-preset').value = '0';
