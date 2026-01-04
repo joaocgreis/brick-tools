@@ -199,19 +199,23 @@
                                     // S is at distance sNum from origin along line to I
                                     const S = new Point(I.x * sNum / aLen, I.y * sNum / aLen);
 
-                                    // Filter by decimal part of sx and sy
-                                    const sxDecimal = S.x % 1;
-                                    const syDecimal = S.y % 1;
-                                    if ((lt(sxDecimal, minDecimal) || gt(sxDecimal, maxDecimal)) &&
-                                        (lt(syDecimal, minDecimal) || gt(syDecimal, maxDecimal))) {
-                                        if (!includeComplementaryDecimal) {
-                                            continue;
-                                        }
-                                        if ((lt(sxDecimal, 1 - maxDecimal) || gt(sxDecimal, 1 - minDecimal)) &&
-                                            (lt(syDecimal, 1 - maxDecimal) || gt(syDecimal, 1 - minDecimal))) {
-                                            continue;
-                                        }
-                                    }
+                                    // Filter by decimal part of sx and sy. If the decimal part of either coordinate is in the range, we want to include it in results.
+                                    const inDecimalRange = (value) => {
+                                        const d = value % 1;
+                                        if (gte(d, minDecimal) && lte(d, maxDecimal))
+                                            return true;
+                                        if (includeComplementaryDecimal && gte(d, 1 - maxDecimal) && lte(d, 1 - minDecimal))
+                                            return true;
+                                        // Note: d is always in [0, 1) because of the modulus, so it can never be exactly 1.
+                                        // When maxDecimal is 1.0, we conceptually want to allow the full [0, 1] interval.
+                                        // In that case, whole-number coordinates (decimal part d = 0) should be treated as included,
+                                        // since 0 is effectively equivalent to 1.0 at the interval boundary in modulus arithmetic.
+                                        if (eq(maxDecimal, 1) && eq(d, 0))
+                                            return true;
+                                        return false;
+                                    };
+                                    if (!(inDecimalRange(S.x) || inDecimalRange(S.y)))
+                                        continue;
 
                                     // Filter out larger liftarms if option is enabled
                                     const keyRemoveLarger = `${formatNumber(S.x, 3)}_${formatNumber(S.y, 3)}`;
