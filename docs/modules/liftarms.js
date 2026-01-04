@@ -73,6 +73,47 @@
     }
 
     /**
+     * Convert array of objects to CSV string
+     * @param {Object[]} data - Array of data objects
+     * @param {Object[]} columns - Column definitions with key, label, formatter
+     * @returns {string} CSV formatted string
+     */
+    function arrayToCSV(data, columns) {
+        if (data.length === 0) return '';
+        const headers = columns.map(col => col.label);
+        const csvRows = [headers.join(',')];
+        for (const row of data) {
+            const values = columns.map(col => {
+                const val = row[col.key];
+                const formatted = col.formatter ? col.formatter(val) : val;
+                if (typeof formatted === 'string' && formatted.includes(',')) {
+                    return `"${formatted}"`;
+                }
+                return formatted;
+            });
+            csvRows.push(values.join(','));
+        }
+        return csvRows.join('\n');
+    }
+
+    /**
+     * Download CSV data as file
+     * @param {string} csv - CSV content
+     * @param {string} filename - Name of the file to download
+     */
+    function downloadCSV(csv, filename) {
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /**
      * Calculate angle (in degrees) at `vertex` between vectors (vertex - pointA) and (pointB - vertex).
      * Returns 0 if either vector has (near) zero length to avoid NaN.
      * @param {Point} vertex - Point where angle is measured
@@ -421,6 +462,17 @@
         calcButtonGroup.appendChild(calcButton);
         controls.appendChild(calcButtonGroup);
 
+        // Download CSV button
+        const downloadCsvButtonGroup = document.createElement('div');
+        downloadCsvButtonGroup.className = 'control-group';
+        downloadCsvButtonGroup.style.justifyContent = 'flex-end';
+        const downloadButton = document.createElement('button');
+        downloadButton.id = 'liftarm-download-csv';
+        downloadButton.className = 'btn btn-secondary';
+        downloadButton.textContent = 'Download CSV';
+        downloadCsvButtonGroup.appendChild(downloadButton);
+        controls.appendChild(downloadCsvButtonGroup);
+
         // Preset dropdown control (disabled/commented out)
         // const presetGroup = document.createElement('div');
         // presetGroup.className = 'control-group';
@@ -562,6 +614,16 @@
             // Update table
             dataTable.setData(allResults);
             dataTable.render();
+        });
+
+        // Download CSV button click handler
+        downloadButton.addEventListener('click', () => {
+            if (allResults.length === 0) {
+                alert('No data to download. Please calculate first.');
+                return;
+            }
+            const csv = arrayToCSV(allResults, columns);
+            downloadCSV(csv, 'liftarms.csv');
         });
 
         // Preset dropdown change handler disabled while presets are commented out
