@@ -13,7 +13,7 @@
      * @param {number} decimals - Number of decimal places
      * @returns {string} Formatted number string
      */
-    formatNumber(value, decimals) {
+    formatNumber(value, decimals=3) {
       // -0 should be formatted as 0
       if (eq(value, 0)) value = 0;
       return value.toFixed(decimals);

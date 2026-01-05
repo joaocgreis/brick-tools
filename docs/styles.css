@@ -11,6 +11,7 @@
   --primary-color: #2563eb;
   --primary-dark: #1d4ed8;
   --primary-light: #3b82f6;
+  --center-bg: #e6f2ff;
   --secondary-color: #64748b;
   --background-color: #f8fafc;
   --surface-color: #ffffff;
@@ -111,6 +112,7 @@ header .description {
 }
 
 /* === Tables === */
+/* DataTable (used by modules via DataTable helper) */
 .data-table-wrapper {
   overflow-x: auto;
   margin-top: 1rem;
@@ -437,6 +439,74 @@ button,
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-muted);
+}
+
+/* === Planar Distances Table Styles (semantic table) === */
+.dist-table-wrapper {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 1rem;
+  /* Use block-level centering so horizontal scrolling starts at the left
+     when the table is wider than the container. Keeping `text-align:center`
+     still visually centers the inline-table when there's space. */
+  display: block;
+  text-align: center;
+}
+
+.dist-table {
+  border-collapse: collapse;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  display: inline-table;
+  /* prevent table from shrinking below its content width */
+  min-width: max-content;
+}
+
+.dist-table th,
+.dist-table td {
+  width: 3.0rem;
+  height: 3.0rem;
+  /* prevent flexbox/grid shrinking if parent uses flexible layout */
+  min-width: 3.0rem;
+  padding: 0.2rem;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.dist-table th.header-cell {
+  background: var(--row-stripe);
+  font-weight: 600;
+}
+
+.dist-table th.corner-cell {
+  background: transparent;
+}
+
+.dist-table td.value-cell {
+  background: white;
+}
+
+/* Axis lines (x=0 or y=0) when not the central ones: light gray background */
+.dist-table td.value-cell.axis-x,
+.dist-table td.value-cell.axis-y {
+  background: #f5f5f5;
+}
+
+/* Central row/column highlight for distances module */
+/* Must be defined after axis styles to take precedence */
+.dist-table td.value-cell[data-ox="0"],
+.dist-table td.value-cell[data-oy="0"] {
+  background: var(--center-bg);
+}
+
+/* Highlighted cells based on user-defined range */
+/* Must take precedence over all other styles */
+.dist-table td.value-cell.highlighted {
+  background: var(--success-color);
 }
 
 /* === Footer === */
