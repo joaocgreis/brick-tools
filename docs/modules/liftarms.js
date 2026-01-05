@@ -8,20 +8,8 @@
     'use strict';
 
     const { eq, neq, gt, gte, lt, lte } = window.FloatUtils;
-
+    const { formatNumber } = window.Utils;
     // `Point` is provided by docs/lib/point.js and exported as window.Point
-
-    /**
-     * Format a number to specified decimal places
-     * @param {number} value - The value to format
-     * @param {number} decimals - Number of decimal places
-     * @returns {string} Formatted number string
-     */
-    function formatNumber(value, decimals) {
-        // -0 should be formatted as 0
-        if (eq(value, 0)) value = 0;
-        return value.toFixed(decimals);
-    }
 
     /**
      * Convert array of objects to CSV string
