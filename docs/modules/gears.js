@@ -135,8 +135,8 @@
      * @param {Object} pos - Position object {x, y, dist}
      * @returns {string} Formatted position with distance
      */
-    function formatPositionWithDist(pos) {
-        return `${pos.x.toFixed(1)}×${pos.y.toFixed(1)} (${pos.dist.toFixed(3)})`;
+    function formatPositionWithDist(pos, idealDist=0) {
+        return `${pos.x.toFixed(1)}×${pos.y.toFixed(1)} (${(pos.dist - idealDist).toFixed(3)})`;
     }
 
     /**
@@ -147,8 +147,8 @@
      */
     function getOverfitColorClass(actualDist, idealDist) {
         const diff = actualDist - idealDist;
-        if (diff <= 0.05) return 'text-green';
-        if (diff <= 0.1) return 'text-orange';
+        if (diff <= 0.065) return 'text-green';
+        if (diff <= 0.095) return 'text-orange';
         return 'text-red';
     }
 
@@ -171,20 +171,21 @@
      */
     function formatOverfitList(positions, idealDist) {
         if (positions.length === 0) return '<span class="text-black">--</span>';
-        return positions.map(pos => {
+        return positions.sort((a, b) => a.dist - b.dist).map(pos => {
             const colorClass = getOverfitColorClass(pos.dist, idealDist);
-            return `<span class="${colorClass}">${formatPositionWithDist(pos)}</span>`;
+            return `<span class="${colorClass}">${formatPositionWithDist(pos, idealDist)}</span>`;
         }).join('; ');
     }
 
     /**
      * Format underfit positions list for table cell
      * @param {Array} positions - Array of position objects
+     * @param {number} idealDist - Ideal center distance
      * @returns {string} HTML string
      */
-    function formatUnderfitList(positions) {
+    function formatUnderfitList(positions, idealDist) {
         if (positions.length === 0) return '<span class="text-black">--</span>';
-        const formatted = positions.map(p => formatPositionWithDist(p)).join('; ');
+        const formatted = positions.sort((a, b) => b.dist - a.dist).map(p => formatPositionWithDist(p, idealDist)).join('; ');
         return `<span class="text-red">${formatted}</span>`;
     }
 
@@ -436,7 +437,7 @@
                 key: 'underfit',
                 label: 'Underfit',
                 type: 'text',
-                formatter: (value) => formatUnderfitList(value)
+                formatter: (value, row) => formatUnderfitList(value, row.dist)
             }
         ];
 
