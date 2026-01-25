@@ -94,20 +94,20 @@
         const exactList = [];
         const overfitList = [];
         const underfitList = [];
-        
+
         const maxCoord = Math.ceil(dist + maxOverfit + 1);
-        
+
         for (let x = 0; x <= maxCoord; x += 0.5) {
             for (let y = 0; y <= x; y += 0.5) {
                 const actualDist = Math.sqrt(x * x + y * y);
-                
+
                 // Skip if too far or too close
                 if (actualDist > dist + maxOverfit) continue;
                 if (actualDist < dist - maxUnderfit) continue;
                 if (actualDist === 0) continue;
-                
+
                 const diff = actualDist - dist;
-                
+
                 if (Math.abs(diff) < 0.0001) {
                     exactList.push({ x, y, dist: actualDist });
                 } else if (diff > 0) {
@@ -117,7 +117,7 @@
                 }
             }
         }
-        
+
         return { exact: exactList, overfit: overfitList, underfit: underfitList };
     }
 
@@ -197,17 +197,21 @@
      */
     function calculateGearCouplings(selectedTeeth, maxOverfit, maxUnderfit) {
         const results = [];
-        
+
         for (const gearA of selectedTeeth) {
             for (const gearB of selectedTeeth) {
                 // Skip worm gears as follower (Gear B)
                 if (isWormGear(gearB)) continue;
-                
+
                 const dist = calculateCenterDistance(gearA, gearB);
                 const ratio = calculateGearRatio(gearA, gearB);
                 const positions = findMountingPositions(dist, maxOverfit, maxUnderfit);
-                
+
+                // Calculate sum (blank for worm gears)
+                const sum = (isWormGear(gearA) || isWormGear(gearB)) ? '' : gearA + gearB;
+
                 results.push({
+                    sum: sum,
                     gearA: gearA,
                     gearB: gearB,
                     ratio: ratio,
@@ -218,7 +222,7 @@
                 });
             }
         }
-        
+
         // Sort by Gear A (numeric), then Gear B
         results.sort((a, b) => {
             const sortA = getGearSortValue(a.gearA);
@@ -226,7 +230,7 @@
             if (sortA !== sortB) return sortA - sortB;
             return a.gearB - b.gearB;
         });
-        
+
         return results;
     }
 
@@ -238,49 +242,49 @@
     function createControls(container, onCalculate) {
         const controls = document.createElement('div');
         controls.className = 'controls-section';
-        
+
         // Gear Teeth Selection
         const teethGroup = document.createElement('div');
         teethGroup.className = 'control-group';
         teethGroup.style.flex = '1 1 100%';
-        
+
         const teethLabel = document.createElement('label');
         teethLabel.textContent = 'Gear Teeth Selection';
         teethGroup.appendChild(teethLabel);
-        
+
         const checkboxContainer = document.createElement('div');
         checkboxContainer.style.display = 'flex';
         checkboxContainer.style.flexWrap = 'wrap';
         checkboxContainer.style.gap = '0.75rem';
         checkboxContainer.style.marginTop = '0.5rem';
-        
+
         STANDARD_TEETH.forEach(tooth => {
             const label = document.createElement('label');
             label.style.display = 'inline-flex';
             label.style.alignItems = 'center';
             label.style.gap = '0.25rem';
-            
+
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = `gear-tooth-${tooth.value}`;
             checkbox.value = tooth.value;
             checkbox.checked = DEFAULT_CHECKED.includes(tooth.value);
-            
+
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(tooth.label));
             checkboxContainer.appendChild(label);
         });
-        
+
         // Custom input
         const customLabel = document.createElement('label');
         customLabel.style.display = 'inline-flex';
         customLabel.style.alignItems = 'center';
         customLabel.style.gap = '0.25rem';
-        
+
         const customText = document.createElement('span');
         customText.textContent = 'Custom:';
         customLabel.appendChild(customText);
-        
+
         const customInput = document.createElement('input');
         customInput.type = 'text';
         customInput.id = 'gear-custom-teeth';
@@ -288,20 +292,20 @@
         customInput.style.width = '80px';
         customInput.style.marginLeft = '0.25rem';
         customLabel.appendChild(customInput);
-        
+
         checkboxContainer.appendChild(customLabel);
         teethGroup.appendChild(checkboxContainer);
         controls.appendChild(teethGroup);
-        
+
         // Max Overfit Distance
         const overfitGroup = document.createElement('div');
         overfitGroup.className = 'control-group';
-        
+
         const overfitLabel = document.createElement('label');
         overfitLabel.htmlFor = 'gear-max-overfit';
         overfitLabel.textContent = 'Max Overfit Distance (studs)';
         overfitGroup.appendChild(overfitLabel);
-        
+
         const overfitInput = document.createElement('input');
         overfitInput.type = 'number';
         overfitInput.id = 'gear-max-overfit';
@@ -311,16 +315,16 @@
         overfitInput.step = '0.01';
         overfitGroup.appendChild(overfitInput);
         controls.appendChild(overfitGroup);
-        
+
         // Max Underfit Distance
         const underfitGroup = document.createElement('div');
         underfitGroup.className = 'control-group';
-        
+
         const underfitLabel = document.createElement('label');
         underfitLabel.htmlFor = 'gear-max-underfit';
         underfitLabel.textContent = 'Max Underfit Distance (studs)';
         underfitGroup.appendChild(underfitLabel);
-        
+
         const underfitInput = document.createElement('input');
         underfitInput.type = 'number';
         underfitInput.id = 'gear-max-underfit';
@@ -330,13 +334,13 @@
         underfitInput.step = '0.01';
         underfitGroup.appendChild(underfitInput);
         controls.appendChild(underfitGroup);
-        
+
         // Calculate Button
         const buttonGroup = document.createElement('div');
         buttonGroup.className = 'control-group';
         buttonGroup.style.justifyContent = 'flex-end';
         buttonGroup.style.alignSelf = 'flex-end';
-        
+
         const calcButton = document.createElement('button');
         calcButton.id = 'gear-calculate';
         calcButton.className = 'btn btn-primary';
@@ -344,7 +348,7 @@
         calcButton.addEventListener('click', onCalculate);
         buttonGroup.appendChild(calcButton);
         controls.appendChild(buttonGroup);
-        
+
         container.appendChild(controls);
     }
 
@@ -354,14 +358,14 @@
      */
     function getSelectedTeeth() {
         const selected = [];
-        
+
         STANDARD_TEETH.forEach(tooth => {
             const checkbox = document.getElementById(`gear-tooth-${tooth.value}`);
             if (checkbox && checkbox.checked) {
                 selected.push(tooth.value);
             }
         });
-        
+
         // Parse custom input
         const customInput = document.getElementById('gear-custom-teeth');
         if (customInput && customInput.value.trim()) {
@@ -373,7 +377,7 @@
                 }
             });
         }
-        
+
         return selected;
     }
 
@@ -387,8 +391,13 @@
         const tableContainer = document.createElement('div');
         tableContainer.id = 'gear-couplings-table';
         container.appendChild(tableContainer);
-        
+
         const columns = [
+            {
+                key: 'sum',
+                label: 'Sum',
+                type: 'text'
+            },
             {
                 key: 'gearA',
                 label: 'A',
@@ -430,7 +439,7 @@
                 formatter: (value) => formatUnderfitList(value)
             }
         ];
-        
+
         const table = new DataTable('gear-couplings-table', columns);
         return table;
     }
@@ -453,7 +462,7 @@
         header.className = 'module-header';
         header.innerHTML = `
             <h2>Gear Couplings Calculator</h2>
-            <p>Calculate all possible gear coupling configurations between two Technic Brick gears, 
+            <p>Calculate all possible gear coupling configurations between two Technic Brick gears,
             showing exact, overfit, and underfit mounting positions.</p>
         `;
         container.appendChild(header);
@@ -464,22 +473,22 @@
         // Create controls with calculate callback
         createControls(container, function() {
             const selectedTeeth = getSelectedTeeth();
-            
+
             if (selectedTeeth.length === 0) {
                 alert('Please select at least one gear tooth count.');
                 return;
             }
-            
+
             const maxOverfit = parseFloat(document.getElementById('gear-max-overfit').value) || 0.2;
             const maxUnderfit = parseFloat(document.getElementById('gear-max-underfit').value) || 0.1;
-            
+
             const results = calculateGearCouplings(selectedTeeth, maxOverfit, maxUnderfit);
-            
+
             // Create table if it doesn't exist
             if (!dataTable) {
                 dataTable = createDataTable(container);
             }
-            
+
             dataTable.setData(results);
             dataTable.render();
         });
